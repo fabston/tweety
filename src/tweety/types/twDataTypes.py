@@ -1377,7 +1377,11 @@ class User(_TwType):
         self.normal_followers_count = self._original_user.get("normal_followers_count", 0)
         self.subscriptions_count = self._user.get("creator_subscriptions_count", 0)
         self.profile_banner_url = self._original_user.get("profile_banner_url")
-        self.profile_image_url_https = self.profile_image_url = self._original_user.get("profile_image_url_https")
+        # Twitter/X has deprecated profile_image_url_https, use profile_image_url as fallback
+        profile_image_url_https = self._original_user.get("profile_image_url_https")
+        profile_image_url = self._original_user.get("profile_image_url")
+        self.profile_image_url_https = profile_image_url_https or profile_image_url
+        self.profile_image_url = profile_image_url or profile_image_url_https
         self.profile_interstitial_type = self._original_user.get("profile_interstitial_type")
         self.protected = self._user.get("privacy", {}).get("protected", False)
         self.screen_name = self.username = self._original_user.get("screen_name") or self._core.get("screen_name")

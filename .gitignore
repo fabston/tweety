@@ -112,3 +112,19 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Tweety specific
+# Test session files (contain user data)
+*.session
+sessions/
+test_*.session
+demo_*.session
+
+# Test reports and debug files
+test_report_*.json
+debug_*.json
+*.log
+
+# Test credentials (if any)
+test_credentials.json
+auth_test.json

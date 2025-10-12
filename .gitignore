@@ -128,3 +128,7 @@ debug_*.json
 # Test credentials (if any)
 test_credentials.json
 auth_test.json
+
+# Test files (excluded from PRs)
+run_tests.py
+tests/

@@ -14,10 +14,51 @@ from functools import reduce
 from typing import Union, List
 from .utils import float_to_hex, is_odd, base64_encode
 
-ON_DEMAND_FILE_REGEX = re.compile(
-    r"""['|\"]{1}ondemand\.s['|\"]{1}:\s*['|\"]{1}([\w]*)['|\"]{1}""", flags=(re.VERBOSE | re.MULTILINE))
+# Legacy hash style from older X/Twitter home payloads
+ON_DEMAND_HASH_REGEX = re.compile(
+    r"""['"]ondemand\.s['"]\s*:\s*['"]([\w-]+)['"]""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+
+# Direct absolute script URL in HTML (e.g. //abs.twimg.com/...)
+ONDEMAND_DIRECT_PATH_REGEX = re.compile(
+    r"""(?:https?:)?//abs\.twimg\.com(?P<path>/responsive-web/client-web[^'"]*/ondemand\.s\.[^'"]+?\.js)""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+
+# Relative script URL in HTML (e.g. /responsive-web/client-web/...)
+ONDEMAND_REL_PATH_REGEX = re.compile(
+    r"""['"](?P<path>/responsive-web/client-web[^'"]*/ondemand\.s\.[^'"]+?\.js)['"]""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+
+# Extract all script src entries from home HTML
+SCRIPT_SRC_REGEX = re.compile(
+    r"""<script[^>]+src=['"](?P<src>[^'"]+)['"]""",
+    flags=(re.IGNORECASE | re.MULTILINE),
+)
+
+# Extract preload script href entries from home HTML
+PRELOAD_SCRIPT_HREF_REGEX = re.compile(
+    r"""<link[^>]+rel=['"]preload['"][^>]+as=['"]script['"][^>]+href=['"](?P<href>[^'"]+)['"]""",
+    flags=(re.IGNORECASE | re.MULTILINE),
+)
+
+# Fallback: discover ondemand path inside downloaded JS bundles
+ONDEMAND_IN_JS_REGEX = re.compile(
+    r"""(?P<path>/responsive-web/client-web[^"']*/ondemand\.s\.[^"']+?\.js)""",
+    flags=(re.MULTILINE),
+)
+
+# Primary and fallback index extractors
 INDICES_REGEX = re.compile(
-    r"""(\(\w{1}\[(\d{1,2})\],\s*16\))+""", flags=(re.VERBOSE | re.MULTILINE))
+    r"""\(\s*\w+\[(\d+)\]\s*,\s*16\)""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+INDICES_FALLBACK_REGEX = re.compile(
+    r"""\[\s*(\d+)\s*\]\s*,\s*16\b""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
 
 
 def interpolate(from_list: List[Union[float, int]], to_list: List[Union[float, int]], f: Union[float, int]):
@@ -101,33 +142,100 @@ class TransactionGenerator:
     DEFAULT_KEY_BYTES_INDICES = None
 
     def __init__(self, home_page_html: Union[bs4.BeautifulSoup, httpx.Response]):
-
         self.home_page_html = self.validate_response(home_page_html)
         self.DEFAULT_ROW_INDEX, self.DEFAULT_KEY_BYTES_INDICES = self.get_indices(self.home_page_html)
         self.key = self.get_key(response=self.home_page_html)
         self.key_bytes = self.get_key_bytes(key=self.key)
         self.animation_key = self.get_animation_key(key_bytes=self.key_bytes, response=self.home_page_html)
 
+    def _normalize_script_src(self, src: str) -> str:
+        if src.startswith("//"):
+            return f"https:{src}"
+        if src.startswith("/"):
+            return f"https://x.com{src}"
+        return src
+
     def get_indices(self, home_page_html=None):
-        key_byte_indices = []
         response = self.validate_response(home_page_html) or self.home_page_html
-        on_demand_file = ON_DEMAND_FILE_REGEX.search(str(response))
-        if on_demand_file:
-            on_demand_file_url = f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{on_demand_file.group(1)}a.js"
-            on_demand_file_response = httpx.get(on_demand_file_url)
-            key_byte_indices_match = INDICES_REGEX.finditer(
-                str(on_demand_file_response.text))
-            for item in key_byte_indices_match:
-                key_byte_indices.append(item.group(2))
-        if not key_byte_indices:
-            raise Exception("Couldn't get animation key indices")
-        key_byte_indices = list(map(int, key_byte_indices))
-        return key_byte_indices[0], key_byte_indices[1:]
+        html = str(response)
+
+        candidate_urls = []
+        asset_urls = []
+
+        # Preferred: direct ondemand URLs already present in home HTML
+        for m in ONDEMAND_DIRECT_PATH_REGEX.finditer(html):
+            candidate_urls.append(f"https://abs.twimg.com{m.group('path')}")
+
+        for m in ONDEMAND_REL_PATH_REGEX.finditer(html):
+            candidate_urls.append(f"https://abs.twimg.com{m.group('path')}")
+
+        # Legacy fallback (older payload style)
+        hash_match = ON_DEMAND_HASH_REGEX.search(html)
+        if hash_match:
+            hash_value = hash_match.group(1)
+            candidate_urls.append(f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{hash_value}.js")
+            candidate_urls.append(f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{hash_value}a.js")
+
+        # Collect script/preload assets from home HTML for fallback parsing
+        for m in SCRIPT_SRC_REGEX.finditer(html):
+            src = self._normalize_script_src(m.group("src"))
+            asset_urls.append(src)
+        for m in PRELOAD_SCRIPT_HREF_REGEX.finditer(html):
+            href = self._normalize_script_src(m.group("href"))
+            asset_urls.append(href)
+
+        # De-dup preserving order
+        seen = set()
+        candidate_urls = [url for url in candidate_urls if not (url in seen or seen.add(url))]
+        seen_assets = set()
+        asset_urls = [url for url in asset_urls if not (url in seen_assets or seen_assets.add(url))]
+
+        def parse_indices(js_text: str):
+            vals = [int(m.group(1)) for m in INDICES_REGEX.finditer(js_text)]
+            if len(vals) < 2:
+                vals = [int(m.group(1)) for m in INDICES_FALLBACK_REGEX.finditer(js_text)]
+            return vals if len(vals) >= 2 else None
+
+        # A) Try ondemand candidates first
+        for url in candidate_urls:
+            try:
+                r = httpx.get(url, timeout=15)
+                if r.status_code == 200 and r.text:
+                    vals = parse_indices(r.text)
+                    if vals:
+                        return vals[0], vals[1:]
+            except Exception:
+                continue
+
+        # B) Fallback: parse indices directly from loaded asset bundles
+        for url in asset_urls[:20]:
+            try:
+                r = httpx.get(url, timeout=12)
+                if r.status_code != 200 or not r.text:
+                    continue
+
+                vals = parse_indices(r.text)
+                if vals:
+                    return vals[0], vals[1:]
+
+                # If bundle references ondemand path, fetch that too
+                js_match = ONDEMAND_IN_JS_REGEX.search(r.text)
+                if js_match:
+                    ondemand_url = f"https://abs.twimg.com{js_match.group('path')}"
+                    r2 = httpx.get(ondemand_url, timeout=12)
+                    if r2.status_code == 200 and r2.text:
+                        vals2 = parse_indices(r2.text)
+                        if vals2:
+                            return vals2[0], vals2[1:]
+            except Exception:
+                continue
+
+        raise Exception("Couldn't get animation key indices")
 
     def validate_response(self, response: Union[bs4.BeautifulSoup, httpx.Response]):
         if not isinstance(response, (bs4.BeautifulSoup, httpx.Response)):
             raise Exception("Unable to get Twitter Home Page")
-        return response if isinstance(response, bs4.BeautifulSoup) else bs4.BeautifulSoup(response.content, 'lxml')
+        return response if isinstance(response, bs4.BeautifulSoup) else bs4.BeautifulSoup(response.content, "lxml")
 
     def get_key(self, response=None):
         response = self.validate_response(response) or self.home_page_html
@@ -137,7 +245,7 @@ class TransactionGenerator:
         return element.get("content")
 
     def get_key_bytes(self, key: str):
-        return list(base64.b64decode(bytes(key, 'utf-8')))
+        return list(base64.b64decode(bytes(key, "utf-8")))
 
     def get_frames(self, response=None):
         response = self.validate_response(response) or self.home_page_html
@@ -149,7 +257,7 @@ class TransactionGenerator:
         return [[int(x) for x in re.sub(r"[^\d]+", " ", item).strip().split()] for item in list(list(frames[key_bytes[5] % 4].children)[0].children)[1].get("d")[9:].split("C")]
 
     def solve(self, value, min_val, max_val, rounding: bool):
-        result = value * (max_val-min_val) / 255 + min_val
+        result = value * (max_val - min_val) / 255 + min_val
         return math.floor(result) if rounding else round(result, 2)
 
     def animate(self, frames, target_time):
@@ -158,22 +266,20 @@ class TransactionGenerator:
         from_rotation = [0.0]
         to_rotation = [self.solve(float(frames[6]), 60.0, 360.0, True)]
         frames = frames[7:]
-        curves = [self.solve(float(item), is_odd(counter), 1.0, False)
-                  for counter, item in enumerate(frames)]
+        curves = [self.solve(float(item), is_odd(counter), 1.0, False) for counter, item in enumerate(frames)]
         cubic = Cubic(curves)
         val = cubic.get_value(target_time)
         color = interpolate(from_color, to_color, val)
         color = [value if value > 0 else 0 for value in color]
         rotation = interpolate(from_rotation, to_rotation, val)
         matrix = convert_rotation_to_matrix(rotation[0])
-        str_arr = [format(round(value), 'x') for value in color[:-1]]
+        str_arr = [format(round(value), "x") for value in color[:-1]]
         for value in matrix:
             rounded = round(value, 2)
             if rounded < 0:
                 rounded = -rounded
             hex_value = float_to_hex(rounded)
-            str_arr.append(f"0{hex_value}".lower() if hex_value.startswith(
-                ".") else hex_value if hex_value else '0')
+            str_arr.append(f"0{hex_value}".lower() if hex_value.startswith(".") else hex_value if hex_value else "0")
         str_arr.extend(["0", "0"])
         animation_key = re.sub(r"[.-]", "", "".join(str_arr))
         return animation_key
@@ -181,8 +287,7 @@ class TransactionGenerator:
     def get_animation_key(self, key_bytes, response):
         total_time = 4096
         row_index = key_bytes[self.DEFAULT_ROW_INDEX] % 16
-        frame_time = reduce(lambda num1, num2: num1*num2,
-                            [key_bytes[index] % 16 for index in self.DEFAULT_KEY_BYTES_INDICES])
+        frame_time = reduce(lambda num1, num2: num1 * num2, [key_bytes[index] % 16 for index in self.DEFAULT_KEY_BYTES_INDICES])
         arr = self.get_2d_array(key_bytes, response)
         frame_row = arr[row_index]
 
@@ -192,21 +297,16 @@ class TransactionGenerator:
 
     def generate_transaction_id(self, method: str, path: str, response=None, key=None, animation_key=None, time_now=None):
         try:
-            time_now = time_now or math.floor(
-                (time.time() * 1000 - 1682924400 * 1000) / 1000)
+            time_now = time_now or math.floor((time.time() * 1000 - 1682924400 * 1000) / 1000)
             time_now_bytes = [(time_now >> (i * 8)) & 0xFF for i in range(4)]
             key = key or self.key or self.get_key(response)
             key_bytes = self.get_key_bytes(key)
-            animation_key = animation_key or self.animation_key or self.get_animation_key(
-                key_bytes, response)
-            hash_val = hashlib.sha256(
-                f"{method}!{path}!{time_now}{self.DEFAULT_KEYWORD}{animation_key}".encode()).digest()
+            animation_key = animation_key or self.animation_key or self.get_animation_key(key_bytes, response)
+            hash_val = hashlib.sha256(f"{method}!{path}!{time_now}{self.DEFAULT_KEYWORD}{animation_key}".encode()).digest()
             hash_bytes = list(hash_val)
             random_num = random.randint(0, 255)
-            bytes_arr = [*key_bytes, *time_now_bytes, *
-                         hash_bytes[:16], self.ADDITIONAL_RANDOM_NUMBER]
-            out = bytearray(
-                [random_num, *[item ^ random_num for item in bytes_arr]])
+            bytes_arr = [*key_bytes, *time_now_bytes, *hash_bytes[:16], self.ADDITIONAL_RANDOM_NUMBER]
+            out = bytearray([random_num, *[item ^ random_num for item in bytes_arr]])
             return base64_encode(out).strip("=")
         except Exception as error:
             raise Exception(f"Couldn't generate transaction ID.\n{error}")

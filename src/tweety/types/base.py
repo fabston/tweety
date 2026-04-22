@@ -1,7 +1,7 @@
 import asyncio
-from tweety.types import ShortUser
-from .twDataTypes import User, Tweet
+
 from ..utils import find_objects, parse_wait_time
+from .twDataTypes import ShortUser, Tweet, User
 
 
 class BaseGeneratorClass(dict):
@@ -79,9 +79,7 @@ class BaseGeneratorClass(dict):
 
     def __repr__(self):
         class_name = self.__class__.__name__
-        return "{}(user_id={}, count={})".format(
-            class_name, self.user_id, self.__len__()
-        )
+        return f"{class_name}(user_id={self.user_id}, count={self.__len__()})"
 
     def __getitem__(self, index):
         if isinstance(index, str):

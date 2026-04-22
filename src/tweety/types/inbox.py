@@ -1,10 +1,10 @@
 import asyncio
 import re
-import time
-from .twDataTypes import User, Media, URL, Hashtag, ShortUser, Symbol, Tweet
-from ..constants import INBOX_PAGE_TYPES, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPE_TRUSTED
-from ..utils import parse_time, parse_wait_time, get_next_index
+
+from ..constants import INBOX_PAGE_TYPE_TRUSTED, INBOX_PAGE_TYPE_UNTRUSTED, INBOX_PAGE_TYPES
 from ..exceptions import TwitterError
+from ..utils import get_next_index, parse_time, parse_wait_time
+from .twDataTypes import URL, Hashtag, Media, ShortUser, Symbol, Tweet, User
 
 
 class Inbox(dict):
@@ -86,7 +86,7 @@ class Inbox(dict):
                         response = await self._client.http.get_untrusted_inbox(min_entry_id)
                     else:
                         response = await self._client.http.get_trusted_inbox(min_entry_id)
-                except TwitterError as inbox_fetch_error:
+                except TwitterError:
                     pass
 
             if response:
@@ -243,7 +243,7 @@ class Conversation(dict):
                     this_user = User(self._client, user)
                 else:
                     this_user = str(participant["user_id"])
-            except Exception as e:
+            except Exception:
                 this_user = str(participant["user_id"])
 
             if participant.get("is_admin") is True:
@@ -366,9 +366,7 @@ class Conversation(dict):
         return str(self.id) == str(other)
 
     def __repr__(self):
-        return "Conversation(id={}, muted={}, nsfw={}, participants={})".format(
-            self.id, self.muted, self.nsfw, self.participants
-        )
+        return f"Conversation(id={self.id}, muted={self.muted}, nsfw={self.nsfw}, participants={self.participants})"
 
 class MessageConversationRead(dict):
     def __init__(self, update, client):
@@ -381,9 +379,7 @@ class MessageConversationRead(dict):
         self.request_id = self["request_id"] = self._raw.get("request_id")
 
     def __repr__(self):
-        return "MessageConversationRead(id={}, time={}, last_read_event_id={})".format(
-            self.id, self.time, self.last_read_event_id
-        )
+        return f"MessageConversationRead(id={self.id}, time={self.time}, last_read_event_id={self.last_read_event_id})"
 
 class Call(dict):
     def __init__(self, update, client):
@@ -399,9 +395,7 @@ class Call(dict):
         self.is_caller = self["is_caller"] = self._raw.get("is_caller")
 
     def __repr__(self):
-        return "Call(id={}, time={}, end_reason={}, type={}, is_caller={})".format(
-            self.id, self.time, self.end_reason, self.type, self.is_caller
-        )
+        return f"Call(id={self.id}, time={self.time}, end_reason={self.end_reason}, type={self.type}, is_caller={self.is_caller})"
 
 
 
@@ -415,9 +409,7 @@ class MessageTrustConversation(dict):
         self.reason = self["reason"] = self._raw.get("reason")
 
     def __repr__(self):
-        return "MessageTrustConversation(id={}, time={}, reason={})".format(
-            self.id, self.time, self.reason
-        )
+        return f"MessageTrustConversation(id={self.id}, time={self.time}, reason={self.reason})"
 
 class MessageParticipantUpdate(dict):
     def __init__(self, update_type, update, _inbox, client):
@@ -460,9 +452,7 @@ class MessageParticipantUpdate(dict):
         return participants
 
     def __repr__(self):
-        return "MessageParticipantUpdate(id={}, type={}, time={}, participants={})".format(
-            self.id, self.type, self.time, self.participants
-        )
+        return f"MessageParticipantUpdate(id={self.id}, type={self.type}, time={self.time}, participants={self.participants})"
 
 
 class MessageNameUpdate(dict):
@@ -490,9 +480,7 @@ class MessageNameUpdate(dict):
         return User(self._client, this_user)
 
     def __repr__(self):
-        return "MessageNameUpdate(id={}, time={}, name={}, by_user={})".format(
-            self.id, self.time, self.name, self.by_user
-        )
+        return f"MessageNameUpdate(id={self.id}, time={self.time}, name={self.name}, by_user={self.by_user})"
 
 
 class MessageConversationCreated(dict):
@@ -505,9 +493,7 @@ class MessageConversationCreated(dict):
         self.time = self['time'] = parse_time(self._raw.get('time'))
 
     def __repr__(self):
-        return "MessageConversationCreated(id={}, time={})".format(
-            self.id, self.time
-        )
+        return f"MessageConversationCreated(id={self.id}, time={self.time})"
 
 
 class MessageConversationAvatarUpdate(dict):
@@ -523,9 +509,7 @@ class MessageConversationAvatarUpdate(dict):
         self.avatar_url = self["avatar_url"] = self._raw.get("conversation_avatar_image_https")
 
     def __repr__(self):
-        return "MessageConversationAvatarUpdate(id={}, by_user_id={})".format(
-            self.id, self.by_user_id
-        )
+        return f"MessageConversationAvatarUpdate(id={self.id}, by_user_id={self.by_user_id})"
 
 class MessageReaction(dict):
     def __init__(self, reaction_message, client):
@@ -541,9 +525,7 @@ class MessageReaction(dict):
         self.sender_id = self["sender_id"] = self._raw.get("sender_id")
 
     def __repr__(self):
-        return "MessageReaction(id={}, time={}, reaction_key={}, emoji_reaction={}, sender_id={})".format(
-            self.id,self.time, self.reaction_key, self.emoji_reaction, self.sender_id
-        )
+        return f"MessageReaction(id={self.id}, time={self.time}, reaction_key={self.reaction_key}, emoji_reaction={self.emoji_reaction}, sender_id={self.sender_id})"
 
 
 class Message(dict):
@@ -675,9 +657,7 @@ class Message(dict):
         return str(self.id) == str(other.id)
 
     def __repr__(self):
-        return "Message(id={}, conversation_id={}, time={})".format(
-            self.id, self.conversation_id, self.time
-        )
+        return f"Message(id={self.id}, conversation_id={self.conversation_id}, time={self.time})"
 
 
 class SendMessage:

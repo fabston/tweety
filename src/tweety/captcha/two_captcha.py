@@ -1,6 +1,7 @@
 from twocaptcha import TwoCaptcha as TwoCaptchaSolver
-from .base import BaseCaptchaSolver
+
 from ..utils import unpack_proxy
+from .base import BaseCaptchaSolver
 
 
 class TwoCaptcha(BaseCaptchaSolver):

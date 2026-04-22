@@ -1,5 +1,5 @@
-from .twDataTypes import Tweet, Excel
 from .base import BaseGeneratorClass
+from .twDataTypes import Excel, Tweet
 
 
 class Bookmarks(BaseGeneratorClass):
@@ -26,7 +26,7 @@ class Bookmarks(BaseGeneratorClass):
                 parsed = Tweet(self.client, entry, response)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)

@@ -1,9 +1,10 @@
 from anticaptchaofficial.funcaptchaproxyless import funcaptchaProxyless
 from anticaptchaofficial.funcaptchaproxyon import funcaptchaProxyon
-from .base import BaseCaptchaSolver
-from ..utils import unpack_proxy
+
 from ..constants import REQUEST_USER_AGENT
 from ..exceptions import CaptchaSolverFailed
+from ..utils import unpack_proxy
+from .base import BaseCaptchaSolver
 
 
 class AntiCaptcha(BaseCaptchaSolver):

@@ -1,6 +1,6 @@
-from .twDataTypes import User, List, Tweet, SelfThread
-from .base import BaseGeneratorClass
 from ..utils import find_objects
+from .base import BaseGeneratorClass
+from .twDataTypes import List, SelfThread, Tweet, User
 
 
 class Lists(BaseGeneratorClass):
@@ -38,7 +38,7 @@ class Lists(BaseGeneratorClass):
                 parsed = List(self.client, item)
                 if parsed:
                     _lists.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -85,7 +85,7 @@ class ListTweets(BaseGeneratorClass):
 
                 parsed = object_type(self.client, entry, None)
                 _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -94,9 +94,7 @@ class ListTweets(BaseGeneratorClass):
         return _tweets, cursor, cursor_top
 
     def __repr__(self):
-        return "ListTweets(id={}, count={})".format(
-            self.list_id, self.__len__()
-        )
+        return f"ListTweets(id={self.list_id}, count={self.__len__()})"
 
 
 class ListMembers(BaseGeneratorClass):
@@ -124,7 +122,7 @@ class ListMembers(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -133,9 +131,7 @@ class ListMembers(BaseGeneratorClass):
         return _users, cursor, cursor_top
 
     def __repr__(self):
-        return "ListMembers(id={}, count={})".format(
-            self.list_id, self.__len__()
-        )
+        return f"ListMembers(id={self.list_id}, count={self.__len__()})"
 
 class ListFollowers(BaseGeneratorClass):
     _RESULT_ATTR = "users"
@@ -167,7 +163,7 @@ class ListFollowers(BaseGeneratorClass):
                 parsed = User(self.client, response_user, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -176,6 +172,4 @@ class ListFollowers(BaseGeneratorClass):
         return _users, cursor, cursor_top
 
     def __repr__(self):
-        return "ListFollowers(id={}, count={})".format(
-            self.list_id, self.__len__()
-        )
+        return f"ListFollowers(id={self.list_id}, count={self.__len__()})"

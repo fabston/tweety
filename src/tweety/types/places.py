@@ -23,7 +23,7 @@ class Places(dict):
         self.results = _results
 
     def __repr__(self):
-        return "Places(results={})".format(len(self.results))
+        return f"Places(results={len(self.results)})"
 
     def __getitem__(self, index):
         if isinstance(index, str):

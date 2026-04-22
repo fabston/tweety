@@ -3,9 +3,10 @@ __author__ = "mahrtayyab"
 
 
 import inspect
+
+from .auth import AuthMethods
 from .bot import BotMethods
 from .updates import UpdateMethods
-from .auth import AuthMethods
 from .user import UserMethods
 from .utils import get_running_loop
 

@@ -1,6 +1,7 @@
-from .base import BaseCaptchaSolver
 import capsolver
+
 from ..utils import unpack_proxy
+from .base import BaseCaptchaSolver
 
 
 class CapSolver(BaseCaptchaSolver):
@@ -37,7 +38,7 @@ class CapSolver(BaseCaptchaSolver):
             })
 
         if blob_data:
-            request["data"] = "{{\"blob\": \"{}\"}}".format(blob_data)
+            request["data"] = f"{{\"blob\": \"{blob_data}\"}}"
 
         return capsolver.solve(request)["token"]
 

@@ -1,18 +1,51 @@
 import warnings
-from typing import Union, Type
+from typing import Type, Union
+
 from httpx._config import Proxy as httpxProxy
-from .constants import LIKES_ARE_PRIVATE_NOW_WARNING
-from .utils import (find_objects, AuthRequired, get_user_from_typehead, get_tweet_id, check_translation_lang,
-                    is_tweet_protected, async_list)
-from .types import (Proxy, TweetComments, UserTweets, Search, User, Tweet, Trends, Community, CommunityTweets,
-                    CommunityMembers, UserFollowers, UserFollowings, TweetHistory, UserMedia, GifSearch,
-                    ShortUser, TypeHeadSearch, TweetTranslate, AudioSpace, UserHighlights, UserLikes, Places,
-                    UserSubscribers, UserCommunities, Broadcast, LiveStreamPayload)
-from .exceptions import *
-from .session import Session, MemorySession, FileSession
-from .http import Request
+
 from .captcha.base import BaseCaptchaSolver
+from .constants import LIKES_ARE_PRIVATE_NOW_WARNING
+from .exceptions import AudioSpaceNotFound, InvalidTweetIdentifier, TwitterError, UserNotFound
 from .filters import TweetCommentFilters
+from .http import Request
+from .session import FileSession, MemorySession, Session
+from .types import (
+    AudioSpace,
+    Broadcast,
+    Community,
+    CommunityMembers,
+    CommunityTweets,
+    GifSearch,
+    LiveStreamPayload,
+    Places,
+    Proxy,
+    Search,
+    ShortUser,
+    Trends,
+    Tweet,
+    TweetComments,
+    TweetHistory,
+    TweetTranslate,
+    TypeHeadSearch,
+    User,
+    UserCommunities,
+    UserFollowers,
+    UserFollowings,
+    UserHighlights,
+    UserLikes,
+    UserMedia,
+    UserSubscribers,
+    UserTweets,
+)
+from .utils import (
+    AuthRequired,
+    async_list,
+    check_translation_lang,
+    find_objects,
+    get_tweet_id,
+    get_user_from_typehead,
+    is_tweet_protected,
+)
 
 
 class BotMethods:
@@ -56,9 +89,9 @@ class BotMethods:
 
         if captcha_solver:
             if not hasattr(captcha_solver, "unlock"):
-                raise AttributeError("captcha_solver instance '{}' doesn't have 'unlock' method".format(type(captcha_solver)))
+                raise AttributeError(f"captcha_solver instance '{type(captcha_solver)}' doesn't have 'unlock' method")
             elif "__call__" not in dir(captcha_solver):
-                raise AttributeError("captcha_solver instance '{}' doesn't have '__call__' method".format(type(captcha_solver)))
+                raise AttributeError(f"captcha_solver instance '{type(captcha_solver)}' doesn't have '__call__' method")
 
             # Captcha Solver is broken
             # self._captcha_solver = captcha_solver(self, self._proxy)
@@ -68,8 +101,8 @@ class BotMethods:
         self.is_user_authorized = False
         self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, captcha_solver=captcha_solver, **httpx_kwargs)
         self.user = None
-    
-    async def get_user_info(self, username: Union[str, int, list] = None):
+
+    async def get_user_info(self, username: Union[str, int, list] = None) -> "User":
         """
         Get the User Info of the specified username
 
@@ -126,7 +159,7 @@ class BotMethods:
     @property
     def cache(self):
         return self._cached_users
-    
+
     async def get_user_id(self, username: str):
         return await self._get_user_id(username)
 
@@ -218,7 +251,7 @@ class BotMethods:
             replies: bool = False,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "UserHighlights":
         """
          Get the tweets from a user
 
@@ -272,7 +305,7 @@ class BotMethods:
             replies: bool = False,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "UserLikes":
         """
          Get the liked tweets of a user
 
@@ -376,7 +409,7 @@ class BotMethods:
             yield result_tuple
 
     @AuthRequired
-    async def get_trends(self):
+    async def get_trends(self) -> list:
         """
         Get the Trends from you locale
 
@@ -488,7 +521,7 @@ class BotMethods:
         return Community(self, response)
 
     @AuthRequired
-    async def get_user_communities(self, user_id=None):
+    async def get_user_communities(self, user_id=None) -> "UserCommunities":
         """
         Get Communities of a specific user is member of
 
@@ -539,7 +572,7 @@ class BotMethods:
             filter_: str = None,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "CommunityTweets":
 
         """
          Getting the tweets from a community
@@ -568,7 +601,7 @@ class BotMethods:
             filter_: str = None,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "CommunityMembers":
         """
          Getting the Members from a community
 
@@ -782,7 +815,7 @@ class BotMethods:
             cursor: str = None,
             get_hidden: bool = False,
             filter_: str = TweetCommentFilters.Relevant
-    ):
+    ) -> "TweetComments":
         """
 
         :param: tweet_id: Tweet ID or the Tweet Object of which the Comments to get

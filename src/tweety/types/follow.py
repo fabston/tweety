@@ -1,5 +1,5 @@
-from .twDataTypes import User
 from .base import BaseGeneratorClass
+from .twDataTypes import User
 
 
 class UserFollowers(BaseGeneratorClass):
@@ -28,7 +28,7 @@ class UserFollowers(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -63,7 +63,7 @@ class UserFollowings(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -98,7 +98,7 @@ class UserSubscribers(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -133,7 +133,7 @@ class MutualFollowers(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -168,7 +168,7 @@ class BlockedUsers(BaseGeneratorClass):
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)

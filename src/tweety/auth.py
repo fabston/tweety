@@ -1,16 +1,17 @@
 import getpass
 from http.cookiejar import MozillaCookieJar
-from typing import Union
-from .exceptions import InvalidCredentials, DeniedLogin, ActionRequired, ArkoseLoginRequired
-from .builder import FlowData
-from .types.n_types import Cookies
-from .utils import find_objects, get_url_parts
+from typing import Optional, Union
+
 from . import constants
+from .builder import FlowData
+from .exceptions import ActionRequired, ArkoseLoginRequired, DeniedLogin, InvalidCredentials
+from .types.n_types import Cookies
+from .utils import find_objects
 
 
 class AuthMethods:
 
-    async def connect(self):
+    async def connect(self) -> Optional["User"]:  # noqa: F821
         """
         This method will be used to connect to already saved session in disk
         """
@@ -26,11 +27,11 @@ class AuthMethods:
 
     async def start(
             self,
-            username=None,
-            password=None,
+            username: Optional[str] = None,
+            password: Optional[str] = None,
             *,
-            extra=None
-    ):
+            extra: Optional[str] = None,
+    ) -> Optional["User"]:  # noqa: F821
         """
         Interactive Version of `sign_in` which will ask user for inputs
         Most of the time , this would be the only method you will be working with,
@@ -63,11 +64,11 @@ class AuthMethods:
 
     async def sign_in(
             self,
-            username,
-            password,
+            username: str,
+            password: str,
             *,
-            extra=None
-    ):
+            extra: Optional[str] = None,
+    ) -> Optional["User"]:  # noqa: F821
         """
         - This method can be used to sign in to Twitter using username and password
         - It will also check for the saved session for the username in the disk
@@ -102,8 +103,8 @@ class AuthMethods:
 
     async def load_cookies(
             self,
-            cookies: Union[str, dict, MozillaCookieJar]
-    ):
+            cookies: Union[str, dict, MozillaCookieJar],
+    ) -> Optional["User"]:  # noqa: F821
         """
         This method can be used to load the already authenticated cookies from Twitter
 
@@ -114,7 +115,7 @@ class AuthMethods:
         await self.session.save_session(self.cookies, None)
         return await self.connect()
 
-    async def load_auth_token(self, auth_token):
+    async def load_auth_token(self, auth_token: str) -> Optional["User"]:  # noqa: F821
         URL = "https://business.x.com/en"
         temp_cookie = {"auth_token": auth_token}
         temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
@@ -132,7 +133,7 @@ class AuthMethods:
         return await self.load_cookies(temp_cookie)
 
     @staticmethod
-    def _get_action_text(response):
+    def _get_action_text(response) -> str:
         primary_message = find_objects(response, 'primary_text', None, none_value={})
         secondary_message = find_objects(response, 'secondary_text', None, none_value={})
         if primary_message:

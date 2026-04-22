@@ -1,6 +1,8 @@
 import json
 import os.path
+
 from .utils import dict_to_string
+
 
 class Session:
     def __init__(self, client):
@@ -20,7 +22,7 @@ class Session:
             try:
                 key, value = i.split("=")
                 result[key] = value
-            except:
+            except Exception:
                 pass
 
         return result
@@ -81,7 +83,7 @@ class FileSession(Session):
 
     def _load_session(self):
         if os.path.exists(self.session_file_path):
-            with open(self.session_file_path, "r") as f:
+            with open(self.session_file_path) as f:
                 session_data = json.load(f)
                 self.cookies = session_data['cookies']
                 self.user = session_data.get('user', {})

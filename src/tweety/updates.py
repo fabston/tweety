@@ -1,6 +1,8 @@
 import asyncio
-from .utils import get_running_loop
+
 from .events.base import BaseUpdateMethod
+from .utils import get_running_loop
+
 
 class UpdateMethods:
 

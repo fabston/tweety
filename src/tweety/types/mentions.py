@@ -1,5 +1,5 @@
-from .twDataTypes import Tweet
 from .base import BaseGeneratorClass
+from .twDataTypes import Tweet
 
 
 class Mention(BaseGeneratorClass):
@@ -32,7 +32,7 @@ class Mention(BaseGeneratorClass):
                 parsed = Tweet(self.client, tweet, response)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)

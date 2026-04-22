@@ -1,9 +1,10 @@
 import asyncio
-from typing import Union, List
+from typing import List, Union
 
-from ..types.inbox import Inbox, Message
+from ..types.inbox import Message
 from ..utils import get_running_loop
 from .base import BaseUpdateMethod
+
 
 class NewMessageUpdate(BaseUpdateMethod):
     def __init__(
@@ -49,9 +50,7 @@ class NewMessageUpdate(BaseUpdateMethod):
             return await self.conversation.send_message(text, file, reply_to_message_id, audio_only, quote_tweet_id)
 
         def __repr__(self):
-            return "NewMessage(id={}, sender={}, receiver={}, time={}, text={})".format(
-                self.id, self.sender, self.receiver, self.time, self.text
-            )
+            return f"NewMessage(id={self.id}, sender={self.sender}, receiver={self.receiver}, time={self.time}, text={self.text})"
 
     async def parse_filters(self):
         if self.blacklist_users:

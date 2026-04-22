@@ -1,5 +1,5 @@
-from .twDataTypes import Gif
 from .base import BaseGeneratorClass
+from .twDataTypes import Gif
 
 
 class GifSearch(BaseGeneratorClass):

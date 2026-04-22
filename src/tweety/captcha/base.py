@@ -1,9 +1,11 @@
-import warnings
-import httpx
 import re
-from ..types.n_types import Proxy
+import warnings
+
+import httpx
+
 from ..constants import LOGIN_SITE_KEY
 from ..exceptions import CaptchaSolverFailed
+from ..types.n_types import Proxy
 
 """
 Modified Code from : https://github.com/ZakariaMQ/twitter-account-unlocker

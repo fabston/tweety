@@ -1,15 +1,47 @@
 import datetime
-from typing import Union, Tuple, List
-from .exceptions import ListNotFound, ConversationNotFound
-from .types.grok import GrokConversation
-from .types.inbox import Message, Conversation
-from .utils import create_conversation_id, AuthRequired, find_objects, get_tweet_id, async_list
-from .types import (User, Mention, Inbox, UploadedMedia, SendMessage, Tweet, Bookmarks, SelfTimeline, TweetLikes,
-                    TweetRetweets, Poll, Choice, TweetNotifications, Lists, List as TwList, ListMembers, ListTweets,
-                    Topic, TopicTweets, MutualFollowers, ScheduledTweets, ScheduledTweet, HOME_TIMELINE_TYPE_FOR_YOU, TweetAnalytics, BlockedUsers,
-                    ShortUser, Place, INBOX_PAGE_TYPE_TRUSTED, Community, ListFollowers, BirdWatch)
+from typing import List, Tuple, Union
+
 from . import constants
+from .exceptions import ConversationNotFound, ListNotFound
 from .filters import Language
+from .types import (
+    HOME_TIMELINE_TYPE_FOR_YOU,
+    INBOX_PAGE_TYPE_TRUSTED,
+    BirdWatch,
+    BlockedUsers,
+    Bookmarks,
+    Choice,
+    Community,
+    Inbox,
+    ListFollowers,
+    ListMembers,
+    Lists,
+    ListTweets,
+    Mention,
+    MutualFollowers,
+    Place,
+    Poll,
+    ScheduledTweet,
+    ScheduledTweets,
+    Search,
+    SelfTimeline,
+    SendMessage,
+    ShortUser,
+    Topic,
+    TopicTweets,
+    Tweet,
+    TweetAnalytics,
+    TweetLikes,
+    TweetNotifications,
+    TweetRetweets,
+    UploadedMedia,
+    User,
+    UserFollowers,
+)
+from .types import List as TwList
+from .types.grok import GrokConversation
+from .types.inbox import Conversation, Message
+from .utils import AuthRequired, async_list, create_conversation_id, find_objects, get_tweet_id
 
 
 @AuthRequired
@@ -52,7 +84,7 @@ class UserMethods:
         """
         return ScheduledTweets(self)
 
-    async def delete_scheduled_tweet(self, tweet_id):
+    async def delete_scheduled_tweet(self, tweet_id) -> bool:
         """
         Delete a Scheduled Tweet
 
@@ -112,7 +144,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "TweetLikes":
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
@@ -156,7 +188,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "TweetRetweets":
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Likes to get
@@ -200,7 +232,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "Search":
         """
 
         :param tweet_id: Tweet ID or the Tweet Object of which the Quotes to get
@@ -311,7 +343,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "TweetNotifications":
 
         """
         Get the Notified Tweets of the subscribed users
@@ -424,7 +456,7 @@ class UserMethods:
             participants: List[Union[str, int, User, ShortUser]],
             first_message: str,
             name: str = None
-    ):
+    ) -> "Conversation":
         """
         Create a Conversation Group
 
@@ -439,7 +471,7 @@ class UserMethods:
             try:
                 user_id = await self.get_user_id(participant)
                 participants_id.append(str(user_id))
-            except:
+            except Exception:
                 pass
 
         participants_id = ",".join(participants_id)
@@ -554,7 +586,7 @@ class UserMethods:
             reaction_emoji: str,
             message_id: Union[str, int, Message],
             conversation_id: Union[str, int, User, Conversation] = None
-    ):
+    ) -> bool:
         """
            React on a Message with emoji
 
@@ -707,7 +739,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "Lists":
         """
 
         :param pages: (`int`) The number of pages to get
@@ -749,7 +781,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "ListMembers":
         """
 
         :param list_id: List ID of which to get members of
@@ -795,7 +827,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "ListFollowers":
         """
 
         :param list_id: List ID of which to get members of
@@ -841,7 +873,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "ListTweets":
         """
 
         :param list_id: List ID of which to get members of
@@ -887,7 +919,7 @@ class UserMethods:
             pages: int = 1,
             wait_time: Union[int, list, tuple] = 2,
             cursor: str = None
-    ):
+    ) -> "UserFollowers":
         """
          Get the mutual friends of a user as generator
 
@@ -1015,7 +1047,7 @@ class UserMethods:
         response = await self.http.block_user(user_id)
         response['__typename'] = "User"
         return User(self, response)
-    
+
     async def unblock_user(self, user_id: Union[str, int , User]):
         """
 
@@ -1154,7 +1186,7 @@ class UserMethods:
     async def delete_list(
             self,
             list_id: Union[str, int, TwList],
-    ):
+    ) -> bool:
         """
 
         :param list_id: LIST ID to be deleted
@@ -1297,7 +1329,7 @@ class UserMethods:
         async for result_tuple in blocked_users.generator():
             yield result_tuple
 
-    async def pin_tweet(self, tweet_id):
+    async def pin_tweet(self, tweet_id) -> bool:
         """
             Pin a Tweet
 
@@ -1310,7 +1342,7 @@ class UserMethods:
         response = await self.http.pin_tweet(tweetId)
         return True if find_objects(response, "message", "post pinned successfully") else False
 
-    async def unpin_tweet(self, tweet_id):
+    async def unpin_tweet(self, tweet_id) -> bool:
         """
             UnPin a Tweet
 

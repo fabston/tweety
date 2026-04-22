@@ -1,9 +1,9 @@
 import datetime
 import json
 
-from .base import BaseGeneratorClass
-from . import GrokMessage
 from ..utils import find_objects
+from . import GrokMessage
+from .base import BaseGeneratorClass
 
 
 class GrokConversation(BaseGeneratorClass):
@@ -33,9 +33,7 @@ class GrokConversation(BaseGeneratorClass):
         return this_items, cursor, None
 
     def __repr__(self):
-        return "GrokConversation(id={}, messages={})".format(
-            self.id, len(self.messages)
-        )
+        return f"GrokConversation(id={self.id}, messages={len(self.messages)})"
 
     async def get_new_response(self, prompt_text):
         responses = []

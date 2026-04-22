@@ -1,8 +1,9 @@
 import json
 import urllib
 from urllib.parse import urlencode
-from .exceptions import DeniedLogin
+
 from . import utils
+from .exceptions import DeniedLogin
 from .types import HOME_TIMELINE_TYPE_FOR_YOU
 
 

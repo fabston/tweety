@@ -1,9 +1,12 @@
 import asyncio
 import base64
 import datetime
+import hashlib
 import inspect
 import json
 import os.path
+import random
+import re
 import string
 import subprocess
 import sys
@@ -11,14 +14,13 @@ import uuid
 import warnings
 from functools import wraps
 from io import BytesIO
+from typing import Union
+from urllib.parse import parse_qs, urlparse
+
 from dateutil import parser as date_parser
-from urllib.parse import urlparse, parse_qs
+
 from .exceptions import AuthenticationRequired
 from .filters import Language
-import re
-import random
-import hashlib
-from typing import Union, List
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
 MIGRATION_REGEX = re.compile(r"""(http(?:s)?://(?:www\.)?(twitter|x){1}\.com(/x)?/migrate([/?])?tok=[a-zA-Z0-9%\-_]+)+""", re.VERBOSE)
@@ -244,7 +246,7 @@ def get_next_index(iterable, current_index, __default__=None):
 def custom_json(self, **kwargs):
     try:
         return json.loads(self.content, **kwargs)
-    except:
+    except Exception:
         return None
 
 
@@ -267,7 +269,7 @@ def create_query_id():
 
 def check_if_file_is_supported(file):
     if isinstance(file, str) and not str(file).startswith("https://") and not os.path.exists(file):
-        raise ValueError("Path {} doesn't exists".format(file))
+        raise ValueError(f"Path {file} doesn't exists")
 
     if isinstance(file, bytes):
         file = file
@@ -284,7 +286,7 @@ def check_if_file_is_supported(file):
         file_mime = MIME_TYPES.get(file_extension)[0]
 
     if file_mime not in [i[0] for i in list(MIME_TYPES.values())]:
-        raise ValueError("File Extension is not supported. Use any of {}".format(list(MIME_TYPES.keys())))
+        raise ValueError(f"File Extension is not supported. Use any of {list(MIME_TYPES.keys())}")
 
     return file_mime
 
@@ -527,7 +529,7 @@ def encode_audio_message(input_filename, ffmpeg_path=None):
     try:
         # Attempt to delete aac audio file in order to save disk space
         os.remove(_output_aac_filename)
-    except:
+    except Exception:
         pass
 
     return output_filename[1:-1]

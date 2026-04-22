@@ -1,15 +1,25 @@
+import datetime
+import html
 import json
 import os.path
-import html
-import warnings
+import re
 from typing import Callable, Union
-from dateutil import parser
-import openpyxl
+
 import dateutil
-from ..constants import MEDIA_TYPE_VIDEO, MEDIA_TYPE_GIF, MEDIA_TYPE_IMAGE
-from ..exceptions import UserNotFound, UserProtected, ProtectedTweet
+import openpyxl
+
+from ..constants import MEDIA_TYPE_GIF, MEDIA_TYPE_IMAGE, MEDIA_TYPE_VIDEO
+from ..exceptions import AuthenticationRequired, ProtectedTweet, UserNotFound, UserProtected
 from ..filters import TweetCommentFilters
-from ..utils import *
+from ..utils import (
+    WORKBOOK_HEADERS,
+    decodeBase64,
+    find_objects,
+    is_tweet_protected,
+    iterable_to_string,
+    parse_time,
+    replace_between_indexes,
+)
 
 
 class _TwType(dict):
@@ -132,9 +142,7 @@ class EditControl(_TwType):
         return self._parent
 
     def __repr__(self):
-        return "EditControl(parent={}, is_latest={})".format(
-            self._parent, self.is_latest
-        )
+        return f"EditControl(parent={self._parent}, is_latest={self.is_latest})"
 
 class TweetWarning(_TwType):
     def __init__(self, client, context):
@@ -144,9 +152,7 @@ class TweetWarning(_TwType):
         self.text = self._raw.get("text", {}).get("text", "")
 
     def __repr__(self):
-        return "ContextualTweetInterstitial(type={}, text={})".format(
-            self.type, self.text
-        )
+        return f"ContextualTweetInterstitial(type={self.type}, text={self.text})"
 
 class CommunityNote(_TwType):
     def __init__(self, client, note, *args, **kwargs):
@@ -167,9 +173,7 @@ class CommunityNote(_TwType):
         return self._translated_text
 
     def __repr__(self):
-        return "CommunityNote(id={}, url={})".format(
-            self.id, self.url
-        )
+        return f"CommunityNote(id={self.id}, url={self.url})"
 
 class BirdWatch(_TwType):
     def __init__(self, client, note, *args, **kwargs):
@@ -201,9 +205,7 @@ class BirdWatch(_TwType):
         return self._translated_text
 
     def __repr__(self):
-        return "BirdWatch(id={}, date={}, tweet_id={}, is_visible={})".format(
-            self.id, self.date, self.tweet_id, self.is_visible
-        )
+        return f"BirdWatch(id={self.id}, date={self.date}, tweet_id={self.tweet_id}, is_visible={self.is_visible})"
 
 
 class Tweet(_TwType):
@@ -279,14 +281,14 @@ class Tweet(_TwType):
                     try:
                         parsed = Tweet(self._client, _, None)
                         _threads.append(parsed)
-                    except:
+                    except Exception:
                         pass
 
             elif str(entry['entryId'].split("-")[0]) == "tweet" and entry['content']['itemContent']['tweetDisplayType'] == "SelfThread":
                 try:
                     parsed = Tweet(self._client, entry, None)
                     _threads.append(parsed)
-                except:
+                except Exception:
                     pass
         return _threads
 
@@ -369,7 +371,7 @@ class Tweet(_TwType):
         self.threads = self.get_threads()
         self.is_liked = self._get_is_liked()
         self.is_retweeted = self._get_is_retweeted()
-        self.can_reply = not "Reply" in self._limited_actions
+        self.can_reply = "Reply" not in self._limited_actions
         self.grok_share = self._get_grok_share()
         self.comments = []
 
@@ -434,9 +436,7 @@ class Tweet(_TwType):
         return None
 
     def _get_url(self):
-        return "https://twitter.com/{}/status/{}".format(
-            self.author.username, self.id
-        )
+        return f"https://twitter.com/{self.author.username}/status/{self.id}"
 
     def _get_original_tweet(self):
         tweet = self._tweet
@@ -527,7 +527,7 @@ class Tweet(_TwType):
                 return Tweet(self._client, raw_tweet)
 
             return None
-        except:
+        except Exception:
             return None
 
     def _get_vibe(self):
@@ -560,7 +560,7 @@ class Tweet(_TwType):
                 this_tweet = Tweet(self._client, entry)
                 if str(this_tweet.id) == str(replied_to_tweet_id):
                     return this_tweet
-        except:
+        except Exception:
             pass
 
         return None
@@ -715,7 +715,7 @@ class Symbol(_TwType):
         self.text = self._raw['text']
 
     def __repr__(self):
-        return "Symbol(text={})".format(self.text)
+        return f"Symbol(text={self.text})"
 
 
 class URL(_TwType):
@@ -731,7 +731,7 @@ class URL(_TwType):
         return self.expanded_url
 
     def __repr__(self):
-        return "URL(expanded_url={})".format(self.expanded_url)
+        return f"URL(expanded_url={self.expanded_url})"
 
 
 class Hashtag(_TwType):
@@ -745,7 +745,7 @@ class Hashtag(_TwType):
         return self.text
 
     def __repr__(self):
-        return "Hashtag(text={})".format(self.text)
+        return f"Hashtag(text={self.text})"
 
 
 class RichText(_TwType):
@@ -770,7 +770,7 @@ class RichText(_TwType):
         self.media = self._get_media()
 
     def __repr__(self):
-        return "RichText(id={})".format(self.id)
+        return f"RichText(id={self.id})"
 
     def __eq__(self, other):
         if isinstance(other, RichText):
@@ -817,15 +817,15 @@ class RichText(_TwType):
             if isinstance(tag, RichTag) and hasattr(tag, "types"):
                 for _type in tag.types:
                     tag_name = self.HTML_TAGS.get(_type)
-                    new_text = "<{tag_name}>{text}</{tag_name}>".format(tag_name=tag_name, text=text)
+                    new_text = f"<{tag_name}>{text}</{tag_name}>"
                     thisHtml = replace_between_indexes(thisHtml, tag.from_index, tag.to_index, new_text)
             elif isinstance(tag, ShortUser):
-                new_text = "<a href='{}'>@{}</a>".format(tag.url, tag.username)
+                new_text = f"<a href='{tag.url}'>@{tag.username}</a>"
                 thisHtml = replace_between_indexes(thisHtml, tag.from_index, tag.to_index, new_text)
             elif tag.get('media_id'):
                 for media in self._tweet.media:
                     if media == tag['media_id']:
-                        new_text = "<img src='{}'><br>".format(media.direct_url)
+                        new_text = f"<img src='{media.direct_url}'><br>"
                         thisHtml = replace_between_indexes(thisHtml, tag['index'], tag['index'], new_text)
                         break
 
@@ -841,9 +841,7 @@ class RichTag(_TwType):
         self.types = self._raw.get('richtext_types', [])
 
     def __repr__(self):
-        return "RichTag(from_index={}, to_index={}, types={})".format(
-            self.from_index, self.to_index, self.types
-        )
+        return f"RichTag(from_index={self.from_index}, to_index={self.to_index}, types={self.types})"
 
 
 class SelfThread(_TwType):
@@ -859,7 +857,7 @@ class SelfThread(_TwType):
             try:
                 parsed = Tweet(self._client, item, None)
                 self.tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
     def __iter__(self):
@@ -875,9 +873,7 @@ class SelfThread(_TwType):
         return find_objects(self._raw, 'allTweetIds', None, none_value=[], recursive=False)
 
     def __repr__(self):
-        return "SelfThread(tweets={}, all_tweets={})".format(
-            len(self.tweets), len(self.all_tweets_id)
-        )
+        return f"SelfThread(tweets={len(self.tweets)}, all_tweets={len(self.all_tweets_id)})"
 
 
 class ConversationThread(_TwType):
@@ -890,9 +886,7 @@ class ConversationThread(_TwType):
         self._format_threads()
 
     def __repr__(self):
-        return "ConversationThread(parent={}, tweets={})".format(
-            self.parent, len(self.tweets)
-        )
+        return f"ConversationThread(parent={self.parent}, tweets={len(self.tweets)})"
 
     def __iter__(self):
         if self.tweets:
@@ -978,14 +972,26 @@ class Media(_TwType):
             if not i.get("content_type").split("/")[-1] == "x-mpegURL":
                 self.streams.append(Stream(self._client, i, videoDict.get("duration_millis", 0), videoDict.get("aspect_ratio")))
 
+    @staticmethod
+    def _res_pixels(res):
+        if not res:
+            return 0
+        try:
+            w, h = res.split("*", 1)
+            return int(w) * int(h)
+        except (ValueError, AttributeError):
+            return 0
+
     async def best_stream(self):
         if self.type == MEDIA_TYPE_IMAGE:
             return self
         elif self.type == MEDIA_TYPE_VIDEO:
-            _res = [eval(stream.res) for stream in self.streams if stream.res]
+            _res = [self._res_pixels(stream.res) for stream in self.streams if stream.res]
+            if not _res:
+                return None
             max_res = max(_res)
             for stream in self.streams:
-                if eval(stream.res) == max_res:
+                if self._res_pixels(stream.res) == max_res:
                     file_format = stream.content_type.split("/")[-1]
                     if not file_format == "x-mpegURL":
                         return stream
@@ -1016,7 +1022,7 @@ class Media(_TwType):
         user = find_objects(source_user, "__typename", "User", recursive=False)
         try:
             user = User(self._client, user)
-        except:
+        except Exception:
             user = None
         return user
 
@@ -1057,9 +1063,7 @@ class MediaSize(_TwType):
         self.resize = self['resize'] = self._raw.get('resize')
 
     def __repr__(self):
-        return "MediaSize(name={}, width={}, height={}, resize={})".format(
-            self.name, self.width, self.height, self.resize
-        )
+        return f"MediaSize(name={self.name}, width={self.width}, height={self.height}, resize={self.resize})"
 
 
 class ShortUser(_TwType):
@@ -1070,7 +1074,7 @@ class ShortUser(_TwType):
         self.id = self.__raw.get("id_str") or self.__raw.get("user_id")
         self.name = self.__raw.get("name")
         self.screen_name = self.username = self.__raw.get("screen_name")
-        self.url = "https://twitter.com/{}".format(self.username)
+        self.url = f"https://twitter.com/{self.username}"
         self.from_index = self._indices[0] if self._indices else None
         self.to_index = self._indices[1] if self._indices else None
 
@@ -1189,9 +1193,7 @@ class Broadcast(_TwType):
         return await self._client.get_stream(self.media_key)
 
     def __repr__(self):
-        return "Broadcast(id={}, title={}, state={}, broadcaster_username={})".format(
-            self.id, self.title, self.state, self.broadcaster_username
-        )
+        return f"Broadcast(id={self.id}, title={self.title}, state={self.state}, broadcaster_username={self.broadcaster_username})"
 
 
 class Poll(_TwType):
@@ -1215,9 +1217,7 @@ class Poll(_TwType):
         self.user_ref = self._get_user_ref()
 
     def __repr__(self):
-        return "Pool(id={}, end_time={}, duration={} minutes, is_final={}, choices={})".format(
-            self.id, self.end_time, self.duration, self.is_final, self.choices
-        )
+        return f"Pool(id={self.id}, end_time={self.end_time}, duration={self.duration} minutes, is_final={self.is_final}, choices={self.choices})"
 
     def _parse_keys(self):
         parsed = {}
@@ -1382,7 +1382,7 @@ class User(_TwType):
         avatar_image_url = self._user.get("avatar", {}).get("image_url")
         profile_image_url_https = self._original_user.get("profile_image_url_https")
         profile_image_url = self._original_user.get("profile_image_url")
-        
+
         # Use new avatar URL if available, otherwise fallback to old structure
         self.profile_image_url_https = avatar_image_url or profile_image_url_https or profile_image_url
         self.profile_image_url = avatar_image_url or profile_image_url or profile_image_url_https
@@ -1400,7 +1400,7 @@ class User(_TwType):
         # self.verified_type = self._get_key("verified_type")
         self.possibly_sensitive = self._original_user.get("possibly_sensitive", False)
         self.pinned_tweets = self._original_user.get("pinned_tweet_ids_str", [])
-        self.profile_url = "https://twitter.com/{}".format(self.screen_name)
+        self.profile_url = f"https://twitter.com/{self.screen_name}"
         self.is_bot = self.is_automated = self._get_is_automated()
         self.automated_by = self._get_automated_by()
         self.is_blocked = self._get_is_blocked()
@@ -1418,9 +1418,7 @@ class User(_TwType):
         return False
 
     def __repr__(self):
-        return "User(id={}, username={}, name={}, verified={})".format(
-            self.id, self.username, self.name, self.verified
-        )
+        return f"User(id={self.id}, username={self.username}, name={self.name}, verified={self.verified})"
 
     async def search_tweets(
             self,
@@ -1437,10 +1435,10 @@ class User(_TwType):
 
     async def unfollow(self):
         return await self._client.unfollow_user(self.id)
-    
+
     async def block(self):
         return await self._client.block_user(self.id)
-    
+
     async def unblock(self):
         return await self._client.unblock_user(self.id)
 
@@ -1578,9 +1576,7 @@ class AudioSpace(_TwType):
         return await self._client.get_stream(self.media_key)
 
     def __repr__(self):
-        return "AudioSpace(id={}, title={}, state={}, tweet={})".format(
-            self.id, self.title, self.state, self.tweet
-        )
+        return f"AudioSpace(id={self.id}, title={self.title}, state={self.state}, tweet={self.tweet})"
 
 class LiveStreamPayload(_TwType):
     def __init__(self, client , live_stream, *args, **kwargs):
@@ -1596,9 +1592,7 @@ class LiveStreamPayload(_TwType):
         self.share_url = self._raw.get("shareUrl")
 
     def __repr__(self):
-        return "LiveStreamPayload(status={}, type={}, session_id={})".format(
-            self.status, self.type, self.session_id
-        )
+        return f"LiveStreamPayload(status={self.status}, type={self.type}, session_id={self.session_id})"
 
 
 class Community(_TwType):
@@ -1618,9 +1612,7 @@ class Community(_TwType):
         self.rules = self._get_rules()
 
     def __repr__(self):
-        return "Community(id={}, name={}, role={}, admin={})".format(
-            self.id, self.name, self.role, self.admin
-        )
+        return f"Community(id={self.id}, name={self.name}, role={self.role}, admin={self.admin})"
 
     def _get_id(self):
         return self._community.get('id_str')
@@ -1677,9 +1669,7 @@ class List(_TwType):
         return False
 
     def __repr__(self):
-        return "List(id={}, name={}, admin={}, subscribers={})".format(
-            self.id, self.name, self.admin, self.subscriber_count
-        )
+        return f"List(id={self.id}, name={self.name}, admin={self.admin}, subscribers={self.subscriber_count})"
 
     def _get_list(self):
         if self._raw.get('entryId'):
@@ -1739,9 +1729,7 @@ class Gif(_TwType):
         self.url = self._raw.get('original_image', {}).get('url')
 
     def __repr__(self):
-        return "Gif(id={}, provider={}, alt_text={})".format(
-            self.id, self.provider, self.alt_text
-        )
+        return f"Gif(id={self.id}, provider={self.provider}, alt_text={self.alt_text})"
 
 
 class Topic(_TwType):
@@ -1763,7 +1751,7 @@ class Topic(_TwType):
         self.is_not_interested = self.original_topic.get('not_interested')
 
     def __repr__(self):
-        return "Topic(id={}, name={})".format(self.id, self.name)
+        return f"Topic(id={self.id}, name={self.name})"
 
 
 class TweetTranslate(_TwType):
@@ -1777,7 +1765,7 @@ class TweetTranslate(_TwType):
         self.localized_source_language = self._raw.get('localizedSourceLanguage')
 
     def __repr__(self):
-        return "TweetTranslate(id={}, source_language={})".format(self.id, self.source_language)
+        return f"TweetTranslate(id={self.id}, source_language={self.source_language})"
 
 
 class TweetAnalytics(_TwType):
@@ -1798,9 +1786,7 @@ class TweetAnalytics(_TwType):
         return value.get('metric_value', 0.0)
 
     def __repr__(self):
-        return "TweetAnalytics(expands={}, engagements={}, follows={}, impressions={}, link_clicks={}, profile_visits={})".format(
-            self.expands, self.engagements, self.follows, self.impressions, self.link_clicks, self.profile_visits
-        )
+        return f"TweetAnalytics(expands={self.expands}, engagements={self.engagements}, follows={self.follows}, impressions={self.impressions}, link_clicks={self.link_clicks}, profile_visits={self.profile_visits})"
 
 
 class ApiMedia:
@@ -1828,9 +1814,7 @@ class ApiImage(_TwType, ApiMedia):
         return self
 
     def __repr__(self):
-        return "ApiImage(key={}, width={}, height={}, alt_text={})".format(
-            self.key, self.width, self.height, self.alt_text
-        )
+        return f"ApiImage(key={self.key}, width={self.width}, height={self.height}, alt_text={self.alt_text})"
 
 
 class ApiVideoVariant(_TwType):
@@ -1842,9 +1826,7 @@ class ApiVideoVariant(_TwType):
         self.url = self.direct_url = self._raw.get("url")
 
     def __repr__(self):
-        return "ApiVideoVariant(content_type={}, bit_rate={})".format(
-            self.content_type, self.bit_rate
-        )
+        return f"ApiVideoVariant(content_type={self.content_type}, bit_rate={self.bit_rate})"
 
 
 class ApiGif(_TwType, ApiMedia):
@@ -1867,9 +1849,7 @@ class ApiGif(_TwType, ApiMedia):
         return None
 
     def __repr__(self):
-        return "ApiGif(key={}, variants={})".format(
-            self.key, self.variants
-        )
+        return f"ApiGif(key={self.key}, variants={self.variants})"
 
 
 class ApiVideo(_TwType, ApiMedia):
@@ -1894,9 +1874,7 @@ class ApiVideo(_TwType, ApiMedia):
         return None
 
     def __repr__(self):
-        return "ApiVideo(key={}, duration_ms={}, aspect_ratio={}, variants={})".format(
-            self.key, self.duration_ms, self.aspect_ratio, self.variants
-        )
+        return f"ApiVideo(key={self.key}, duration_ms={self.duration_ms}, aspect_ratio={self.aspect_ratio}, variants={self.variants})"
 
 
 class ScheduledTweet(_TwType):
@@ -1929,9 +1907,7 @@ class ScheduledTweet(_TwType):
         return await self._client.delete_scheduled_tweet(self.id)
 
     def __repr__(self):
-        return "ScheduledTweet(id={}, date={}, text={}, media={})".format(
-            self.id, self.date, self.text, self.media
-        )
+        return f"ScheduledTweet(id={self.id}, date={self.date}, text={self.text}, media={self.media})"
 
 
 class Article(_TwType):
@@ -1966,9 +1942,7 @@ class Article(_TwType):
         return parsed_media
 
     def __repr__(self):
-        return "Article(id={}, date={}, title={})".format(
-            self.id, self.date, self.title
-        )
+        return f"Article(id={self.id}, date={self.date}, title={self.title})"
 
 class GrokShare(_TwType):
     def __init__(self, client, grok_share_json):
@@ -1979,9 +1953,7 @@ class GrokShare(_TwType):
         self.messages = [GrokShareMessage(self._client, i) for i in self._grok_share_data.get("conversation_preview", [])]
 
     def __repr__(self):
-        return "GrokShare(id={}, messages={})".format(
-            self.id, len(self.messages)
-        )
+        return f"GrokShare(id={self.id}, messages={len(self.messages)})"
 
 class GrokShareMessage(_TwType):
     def __init__(self, client, message):
@@ -1996,9 +1968,7 @@ class GrokShareMessage(_TwType):
         return True if self.sender.lower() == "agent" else False
 
     def __repr__(self):
-        return "GrokShareMessage(text={}, sender={}, mode={})".format(
-            self.text, self.sender, self.mode
-        )
+        return f"GrokShareMessage(text={self.text}, sender={self.sender}, mode={self.mode})"
 
 class GrokMessage(_TwType):
     def __init__(self, client, message):
@@ -2018,9 +1988,7 @@ class GrokMessage(_TwType):
         return True if self.sender.lower() in ["agent", "assistant"] else False
 
     def __repr__(self):
-        return "GrokMessage(text={}, sender={}, mode={})".format(
-            self.text, self.sender, self.mode
-        )
+        return f"GrokMessage(text={self.text}, sender={self.sender}, mode={self.mode})"
 
 class GrokAttachment(_TwType):
     def __init__(self, client, attachment_json):
@@ -2032,9 +2000,7 @@ class GrokAttachment(_TwType):
         self.url = f"https://ton.x.com/i/ton/data/grok-attachment/{self.id}"
 
     def __repr__(self):
-        return "GrokAttachment(id={}, mime_type={}, filename={})".format(
-            self.id, self.mime_type, self.filename
-        )
+        return f"GrokAttachment(id={self.id}, mime_type={self.mime_type}, filename={self.filename})"
 
 class GrokCitedWebPage(_TwType):
     def __init__(self, client, cite_json):
@@ -2048,6 +2014,4 @@ class GrokCitedWebPage(_TwType):
         self.url = self._raw.get("url")
 
     def __repr__(self):
-        return "GrokCitedWebPage(title={}, url={})".format(
-            self.title, self.url
-        )
+        return f"GrokCitedWebPage(title={self.title}, url={self.url})"

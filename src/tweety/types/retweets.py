@@ -17,10 +17,7 @@ class TweetRetweets(BaseGeneratorClass):
         self.wait_time = wait_time
 
     def __repr__(self):
-        return "TweetRetweets(tweet_id={}, count={})".format(
-            self.tweet_id,
-            len(self.users)
-        )
+        return f"TweetRetweets(tweet_id={self.tweet_id}, count={len(self.users)})"
 
     async def get_page(self, cursor):
         _users = []
@@ -33,7 +30,7 @@ class TweetRetweets(BaseGeneratorClass):
                 parsed = User(self.client, entry)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)

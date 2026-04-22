@@ -2,17 +2,19 @@
 Credit : https://github.com/iSarabjitDhiman/TweeterPy/tree/master/tweeterpy/tid
 """
 
-import re
-import bs4
-import math
-import time
-import random
 import base64
 import hashlib
-import httpx
+import math
+import random
+import re
+import time
 from functools import reduce
-from typing import Union, List
-from .utils import float_to_hex, is_odd, base64_encode
+from typing import List, Union
+
+import bs4
+import httpx
+
+from .utils import base64_encode, float_to_hex, is_odd
 
 # Legacy hash style from older X/Twitter home payloads
 ON_DEMAND_HASH_REGEX = re.compile(

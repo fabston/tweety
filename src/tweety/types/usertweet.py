@@ -1,9 +1,8 @@
-import traceback
 
-from .twDataTypes import SelfThread, ConversationThread, Tweet, Excel, ScheduledTweet
-from ..exceptions import UserProtected, UserNotFound
-from .base import BaseGeneratorClass, find_objects
+from ..exceptions import UserNotFound, UserProtected
 from ..filters import TweetCommentFilters
+from .base import BaseGeneratorClass, find_objects
+from .twDataTypes import ConversationThread, Excel, ScheduledTweet, SelfThread, Tweet
 
 
 class UserTweets(BaseGeneratorClass):
@@ -62,7 +61,7 @@ class UserTweets(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -122,7 +121,7 @@ class UserHighlights(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -182,7 +181,7 @@ class UserLikes(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -243,7 +242,7 @@ class UserMedia(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -291,7 +290,7 @@ class SelfTimeline(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -355,7 +354,7 @@ class TweetComments(BaseGeneratorClass):
                 if len(entry) > 0:
                     parsed = object_type(self.client, self.parent, entry)
                     _comments.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -367,9 +366,7 @@ class TweetComments(BaseGeneratorClass):
         return _comments, cursor, cursor_top
 
     def __repr__(self):
-        return "TweetComments(tweet_id={}, count={}, filter={}, parent={})".format(
-            self.tweet_id, len(self.tweets), self.filter, self.parent
-        )
+        return f"TweetComments(tweet_id={self.tweet_id}, count={len(self.tweets)}, filter={self.filter}, parent={self.parent})"
 
 
 class TweetHistory(BaseGeneratorClass):
@@ -416,9 +413,7 @@ class TweetHistory(BaseGeneratorClass):
         return len(self.tweets)
 
     def __repr__(self):
-        return "TweetHistory(tweets={}, author={})".format(
-            len(self.tweets), self.tweets[0].author
-        )
+        return f"TweetHistory(tweets={len(self.tweets)}, author={self.tweets[0].author})"
 
 
 class ScheduledTweets(dict):
@@ -435,7 +430,7 @@ class ScheduledTweets(dict):
         for tweet in tweets_list:
             try:
                 self.tweets.append(ScheduledTweet(self._client, tweet))
-            except:
+            except Exception:
                 pass
 
         self["tweets"] = self.tweets
@@ -454,5 +449,5 @@ class ScheduledTweets(dict):
         return len(self.tweets)
 
     def __repr__(self):
-        return "ScheduledTweets(tweets={})".format(len(self.tweets))
+        return f"ScheduledTweets(tweets={len(self.tweets)})"
 

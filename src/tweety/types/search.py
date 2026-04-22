@@ -1,10 +1,9 @@
-import traceback
 
-from . import Tweet, Excel, User, List
+from ..filters import SearchFilters
+from ..utils import find_objects
+from . import Excel, List, Tweet, User
 from .base import BaseGeneratorClass
 from .twDataTypes import SelfThread
-from ..utils import find_objects
-from ..filters import SearchFilters
 
 
 class Search(BaseGeneratorClass):
@@ -31,9 +30,7 @@ class Search(BaseGeneratorClass):
         self.filter = filter_.strip() if filter_ else None
 
     def __repr__(self):
-        return "Search(keyword={}, count={}, filter={})".format(
-            self.keyword, len(self.results), self.filter
-        )
+        return f"Search(keyword={self.keyword}, count={len(self.results)}, filter={self.filter})"
 
     async def get_page(self, cursor):
         thisObjects = []
@@ -53,7 +50,7 @@ class Search(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     thisObjects.append(parsed)
-            except:
+            except Exception:
                 pass
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
@@ -111,7 +108,7 @@ class TypeHeadSearch(dict):
 
                     parsed = _type_object(self.client, result)
                     self.results.append(parsed)
-                except:
+                except Exception:
                     pass
         self['results'] = self.results
         return self.results
@@ -130,5 +127,5 @@ class TypeHeadSearch(dict):
         return len(self.results)
 
     def __repr__(self):
-        return "TypeHeadSearch(keyword={})".format(self.keyword)
+        return f"TypeHeadSearch(keyword={self.keyword})"
 

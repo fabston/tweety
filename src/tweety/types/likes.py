@@ -17,9 +17,7 @@ class TweetLikes(BaseGeneratorClass):
         self.wait_time = wait_time
 
     def __repr__(self):
-        return "TweetLikes(tweet_id={}, count={})".format(
-            self.tweet_id, len(self.users)
-        )
+        return f"TweetLikes(tweet_id={self.tweet_id}, count={len(self.users)})"
 
     @staticmethod
     def _get_tweet_content_key(response):
@@ -39,7 +37,7 @@ class TweetLikes(BaseGeneratorClass):
                 parsed = User(self.client, entry)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)

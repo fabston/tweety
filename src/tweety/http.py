@@ -1,23 +1,23 @@
-import asyncio
 import inspect
 import os
 import random
 import re
 import time
-import traceback
 import uuid
 import warnings
 from typing import Callable
 from urllib.parse import quote, urlparse
+
 import bs4
 import httpx
-from .exceptions import GuestTokenNotFound, TwitterError, UserNotFound, InvalidCredentials
+
+from . import constants
+from .builder import UrlBuilder
+from .exceptions import GuestTokenNotFound, InvalidCredentials, TwitterError, UserNotFound
+from .transaction import TransactionGenerator
 from .types import User
 from .types.n_types import GenericError
-from .utils import custom_json, GUEST_TOKEN_REGEX, get_random_string, MIGRATION_REGEX, Warn
-from .builder import UrlBuilder
-from .transaction import TransactionGenerator
-from . import constants
+from .utils import GUEST_TOKEN_REGEX, MIGRATION_REGEX, Warn, custom_json, get_random_string
 
 httpx.Response.json = custom_json
 
@@ -125,6 +125,10 @@ class Request:
         return headers
 
     def _get_csrf(self):
+        session_ct0 = self._session.cookies.get("ct0") if self._session.cookies else None
+        if session_ct0:
+            return session_ct0
+
         if self._cookie and self._cookie.get("ct0"):
             return self._cookie.get("ct0")
 
@@ -134,7 +138,7 @@ class Request:
         self.user = user
 
     def _wait_for_rate_limit(self, url):
-        raise NotImplemented
+        raise NotImplementedError
 
     async def _update_rate_limit(self, response, func):
         url = response.url
@@ -156,10 +160,14 @@ class Request:
 
         if response.cookies.get("ct0"):
             updated_required = True
-            setattr(self._client.cookies, "ct0", response.cookies.get("ct0"))
+            self._client.cookies.ct0 = response.cookies.get("ct0")
+            if isinstance(self._cookie, dict):
+                self._cookie["ct0"] = response.cookies.get("ct0")
         if response.cookies.get("auth_token"):
             updated_required = True
-            setattr(self._client.cookies, "auth_token", response.cookies.get("auth_token"))
+            self._client.cookies.auth_token = response.cookies.get("auth_token")
+            if isinstance(self._cookie, dict):
+                self._cookie["auth_token"] = response.cookies.get("auth_token")
 
         if updated_required:
             await self._client.session.save_session(self._client.cookies, None)
@@ -186,7 +194,6 @@ class Request:
 
         new_request = request_data
         new_request["headers"] = self._get_request_headers(request_data.get("headers", {}))
-        new_request["cookies"] = self._cookie
 
         transaction_id = self._transaction.generate_transaction_id(
             new_request["method"],
@@ -236,9 +243,9 @@ class Request:
 
             error_code = error.get("code", 0)
             error_message = error.get("message")
-            
-            # Twitter Captcha solving is a bit unstable , removing it till fixed 
-            
+
+            # Twitter Captcha solving is a bit unstable , removing it till fixed
+
             # if int(error_code) in [326] and self._captcha_solver:
             #    self.solve_captcha()
             #    return self.__get_response__(return_raw, ignore_none_data, is_document, **request_data)
@@ -275,7 +282,7 @@ class Request:
             if migration_redirection_url:
                 response = await self._session.request(method="GET", url=migration_redirection_url.group(0), headers=headers)
                 home_page = bs4.BeautifulSoup(response.content, 'lxml')
-            migration_form = home_page.select_one("form[name='f']") or home_page.select_one(f"form[action='https://x.com/x/migrate']")
+            migration_form = home_page.select_one("form[name='f']") or home_page.select_one("form[action='https://x.com/x/migrate']")
 
             if migration_form:
                 url = migration_form.attrs.get("action", 'https://x.com/x/migrate')
@@ -297,7 +304,7 @@ class Request:
             this_response = await self._session.request(**request_data)
             this_response = this_response.json()
             token = this_response.get('guest_token')  # noqa
-        except:
+        except Exception:
             pass
 
         try:
@@ -305,15 +312,15 @@ class Request:
                 request_data = self._builder.get_guest_token_fallback()
                 request_data["headers"] = headers
                 request_data["headers"] = {"authorization": None, "content-type": None, "x-csrf-token": None}
-                this_response = await self._session.request(**request_data, cookies=None)
+                this_response = await self._session.request(**request_data)
                 guest_token = re.findall(GUEST_TOKEN_REGEX, this_response.text)
                 if guest_token:
                     token = guest_token[0]
-        except:
+        except Exception:
             pass
 
         if not token:
-            raise GuestTokenNotFound(response=this_response, message=f"Guest Token couldn't be found")
+            raise GuestTokenNotFound(response=this_response, message="Guest Token couldn't be found")
         return token
 
     async def verify_cookies(self):
@@ -506,13 +513,13 @@ class Request:
 
     async def update_conversation_name(self, conversation_id, name):
         request_data = self._builder.update_conversation_group_name(conversation_id, name)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
     async def update_conversation_avatar(self, conversation_id, avatar_id):
         request_data = self._builder.update_conversation_group_avatar(conversation_id, avatar_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
@@ -673,37 +680,37 @@ class Request:
 
     async def follow_user(self, user_id):
         request_data = self._builder.follow_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unfollow_user(self, user_id):
         request_data = self._builder.unfollow_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
-    
+
     async def block_user(self, user_id):
         request_data = self._builder.block_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unblock_user(self, user_id):
         request_data = self._builder.unblock_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def mute_user(self, user_id):
         request_data = self._builder.mute_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unmute_user(self, user_id):
         request_data = self._builder.un_mute_user(user_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
@@ -872,13 +879,13 @@ class Request:
 
     async def update_profile_image(self, media_id):
         request_data = self._builder.update_profile_image(media_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def update_profile_banner(self, media_id):
         request_data = self._builder.update_profile_banner(media_id)
-        request_data['headers']['content-type'] = f"application/x-www-form-urlencoded"
+        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
@@ -895,7 +902,7 @@ class Request:
 
             try:
                 total_size = int(response.headers['content-length'])
-            except:
+            except Exception:
                 warnings.warn("Unable to get 'content-length', it will be set to zero")
                 total_size = 0
 

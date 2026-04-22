@@ -30,7 +30,7 @@ class TopicTweets(BaseGeneratorClass):
                 parsed = Tweet(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -38,7 +38,7 @@ class TopicTweets(BaseGeneratorClass):
         return _tweets, cursor, cursor_top
 
     def __repr__(self):
-        return "TopicTweets(topic={}, tweets={})".format(self.topic, len(self.tweets))
+        return f"TopicTweets(topic={self.topic}, tweets={len(self.tweets)})"
 
 
 

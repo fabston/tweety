@@ -1,6 +1,6 @@
-from .twDataTypes import SelfThread, Tweet, Excel, User, Community
-from .base import BaseGeneratorClass
 from ..utils import find_objects
+from .base import BaseGeneratorClass
+from .twDataTypes import Community, Excel, SelfThread, Tweet, User
 
 
 class UserCommunities(BaseGeneratorClass):
@@ -34,7 +34,7 @@ class UserCommunities(BaseGeneratorClass):
                 parsed = Community(self.client, entry, None)
                 if parsed:
                     _communities.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = find_objects(response, "next_cursor", value=None)
@@ -43,9 +43,7 @@ class UserCommunities(BaseGeneratorClass):
         return _communities, cursor, cursor_top
 
     def __repr__(self):
-        return "UserCommunities(user_id={}, count={})".format(
-            self.user_id, self.__len__()
-        )
+        return f"UserCommunities(user_id={self.user_id}, count={self.__len__()})"
 
 
 class CommunityTweets(BaseGeneratorClass):
@@ -88,7 +86,7 @@ class CommunityTweets(BaseGeneratorClass):
                 parsed = object_type(self.client, entry, None)
                 if parsed:
                     _tweets.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = self._get_cursor_(response)
@@ -100,9 +98,7 @@ class CommunityTweets(BaseGeneratorClass):
         return Excel(self, filename)
 
     def __repr__(self):
-        return "CommunityTweets(id={}, count={})".format(
-            self.community_id, self.__len__()
-        )
+        return f"CommunityTweets(id={self.community_id}, count={self.__len__()})"
 
 
 class CommunityMembers(BaseGeneratorClass):
@@ -135,7 +131,7 @@ class CommunityMembers(BaseGeneratorClass):
                 parsed = User(self.client, response_user, None)
                 if parsed:
                     _users.append(parsed)
-            except:
+            except Exception:
                 pass
 
         cursor = find_objects(response, "next_cursor", value=None)
@@ -144,6 +140,4 @@ class CommunityMembers(BaseGeneratorClass):
         return _users, cursor, cursor_top
 
     def __repr__(self):
-        return "CommunityMembers(id={}, count={})".format(
-            self.community_id, self.__len__()
-        )
+        return f"CommunityMembers(id={self.community_id}, count={self.__len__()})"

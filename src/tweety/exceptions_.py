@@ -1,5 +1,27 @@
-"""
-This module is an alias for `exceptions` for backward compatibility.
-"""
+"""This module is an alias for `exceptions` for backward compatibility."""
 
-from .exceptions import *
+from .exceptions import (  # noqa: F401
+    TWITTER_ERRORS,
+    ActionRequired,
+    ArkoseLoginRequired,
+    AudioSpaceNotFound,
+    AuthenticationRequired,
+    CaptchaSolverFailed,
+    ConversationNotFound,
+    DeniedLogin,
+    GuestTokenNotFound,
+    InvalidBroadcast,
+    InvalidCredentials,
+    InvalidTweetIdentifier,
+    ListNotFound,
+    LockedAccount,
+    ProtectedTweet,
+    ProxyParseError,
+    RateLimitReached,
+    SuspendedAccount,
+    TwitterError,
+    UnknownError,
+    UploadFailed,
+    UserNotFound,
+    UserProtected,
+)

@@ -2,12 +2,25 @@ import datetime
 import os
 import time
 from http.cookiejar import MozillaCookieJar
-from httpx._content import encode_multipart_data
 from io import BytesIO
+
+from httpx._content import encode_multipart_data
+
 from .. import constants
-from . import Gif
-from ..utils import calculate_md5, get_random_string, check_if_file_is_supported
-from ..exceptions import *
+from ..exceptions import (
+    TWITTER_ERRORS,
+    InvalidBroadcast,
+    InvalidCredentials,
+    InvalidTweetIdentifier,
+    LockedAccount,
+    ProxyParseError,
+    RateLimitReached,
+    SuspendedAccount,
+    TwitterError,
+    UploadFailed,
+)
+from ..utils import calculate_md5, check_if_file_is_supported, get_random_string
+from .twDataTypes import Gif
 
 
 class Proxy:
@@ -29,13 +42,11 @@ class Proxy:
             raise ProxyParseError()
 
         if self.username and self.password:
-            this_url = "{}:{}@{}:{}".format(
-                self.username, self.password, self.host, self.port
-            )
+            this_url = f"{self.username}:{self.password}@{self.host}:{self.port}"
         else:
-            this_url = "{}:{}".format(self.host, self.port)
+            this_url = f"{self.host}:{self.port}"
 
-        return "{}{}".format(self.PROTOCOLS[self.proxy_type], this_url)
+        return f"{self.PROTOCOLS[self.proxy_type]}{this_url}"
 
     def __str__(self):
         return self.__proxy_url__()
@@ -87,7 +98,7 @@ class GenericError:
             error_code=self.error_code,
             error_name=TWITTER_ERRORS.get(self.error_code, 0),
             response=self.response,
-            message="[{}] {}".format(self.error_code, self.message)
+            message=f"[{self.error_code}] {self.message}"
         )
 
 
@@ -114,7 +125,7 @@ class Cookies:
             elif isinstance(self._raw_cookies, dict):
                 true_cookies = self._raw_cookies
             else:
-                raise TypeError("cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {}".format(self._raw_cookies.__class__))
+                raise TypeError(f"cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {self._raw_cookies.__class__}")
 
             for key, value in true_cookies.items():
                 setattr(self, key.strip(), value.strip())
@@ -296,9 +307,7 @@ class UploadedMedia:
         return self
 
     def __repr__(self):
-        return "UploadedMedia(media_id={}, uploaded={}, mime_type={}, size={})".format(
-            self.media_id, True if self.media_id else False, self.mime_type, self.size
-        )
+        return f"UploadedMedia(media_id={self.media_id}, uploaded={True if self.media_id else False}, mime_type={self.mime_type}, size={self.size})"
 
 
 

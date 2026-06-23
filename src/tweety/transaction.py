@@ -22,6 +22,12 @@ ON_DEMAND_HASH_REGEX = re.compile(
     flags=(re.VERBOSE | re.MULTILINE),
 )
 
+# Webpack chunk map (March 2026+): chunk id and file hash are keyed separately
+ON_DEMAND_CHUNK_REGEX = re.compile(
+    r"""[,{](\d+):["']ondemand\.s["']""",
+    flags=(re.VERBOSE | re.MULTILINE),
+)
+
 # Direct absolute script URL in HTML (e.g. //abs.twimg.com/...)
 ONDEMAND_DIRECT_PATH_REGEX = re.compile(
     r"""(?:https?:)?//abs\.twimg\.com(?P<path>/responsive-web/client-web[^'"]*/ondemand\.s\.[^'"]+?\.js)""",
@@ -44,6 +50,12 @@ SCRIPT_SRC_REGEX = re.compile(
 PRELOAD_SCRIPT_HREF_REGEX = re.compile(
     r"""<link[^>]+rel=['"]preload['"][^>]+as=['"]script['"][^>]+href=['"](?P<href>[^'"]+)['"]""",
     flags=(re.IGNORECASE | re.MULTILINE),
+)
+
+# Any JS asset URL embedded in home HTML (inline manifests, etc.)
+EMBEDDED_JS_URL_REGEX = re.compile(
+    r"""https://abs\.twimg\.com[^\s"'<>]+\.js""",
+    flags=(re.MULTILINE),
 )
 
 # Fallback: discover ondemand path inside downloaded JS bundles
@@ -157,12 +169,35 @@ class TransactionGenerator:
             return f"https://x.com{src}"
         return src
 
+    @staticmethod
+    def _ondemand_urls_from_webpack(html: str) -> List[str]:
+        chunk_match = ON_DEMAND_CHUNK_REGEX.search(html)
+        if not chunk_match:
+            return []
+
+        chunk_id = chunk_match.group(1)
+        hash_pattern = re.compile(
+            rf"""[,{{]{re.escape(chunk_id)}:["']([0-9a-fA-F]+)["']""",
+        )
+        hash_match = hash_pattern.search(html)
+        if not hash_match:
+            return []
+
+        hash_value = hash_match.group(1)
+        return [
+            f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{hash_value}a.js",
+            f"https://abs.twimg.com/responsive-web/client-web/ondemand.s.{hash_value}.js",
+        ]
+
     def get_indices(self, home_page_html=None):
         response = self.validate_response(home_page_html) or self.home_page_html
         html = str(response)
 
         candidate_urls = []
         asset_urls = []
+
+        # Webpack chunk map: resolve ondemand.s hash via chunk id (current X layout)
+        candidate_urls.extend(self._ondemand_urls_from_webpack(html))
 
         # Preferred: direct ondemand URLs already present in home HTML
         for m in ONDEMAND_DIRECT_PATH_REGEX.finditer(html):
@@ -185,6 +220,8 @@ class TransactionGenerator:
         for m in PRELOAD_SCRIPT_HREF_REGEX.finditer(html):
             href = self._normalize_script_src(m.group("href"))
             asset_urls.append(href)
+        for m in EMBEDDED_JS_URL_REGEX.finditer(html):
+            asset_urls.append(m.group(0))
 
         # De-dup preserving order
         seen = set()

@@ -180,7 +180,12 @@ class Request:
     async def _init_local_api(self):
         cookies = await self.remove_cookies()
         if not self._transaction:
+            # Responsive-web ondemand metadata is on the authenticated layout.
+            if cookies:
+                self.cookies = cookies
             home_page_html = await self.get_home_html()
+            self.cookies = None
+            self.session.cookies = None
             self._transaction = TransactionGenerator(home_page_html)
 
         if not self._guest_token:
@@ -270,7 +275,10 @@ class Request:
         if headers.get("authorization"):
             del headers["authorization"]
         try:
-            response = await self._session.request(method="GET", url="https://x.com/?mx=2", headers=headers)
+            # /home serves the responsive-web bundle with ondemand.s metadata;
+            # /?mx=2 returns the logged-out x-web layout which lacks it.
+            home_url = "https://x.com/home"
+            response = await self._session.request(method="GET", url=home_url, headers=headers)
 
             if response.status_code not in range(200, 300):
                 response = await self._session.request(method="GET", url=self._builder.URL_HOME_PAGE, headers=headers)

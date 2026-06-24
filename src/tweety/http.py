@@ -23,7 +23,6 @@ httpx.Response.json = custom_json
 
 
 class Request:
-
     def __init__(self, client, max_retries=3, proxy=None, captcha_solver=None, **kwargs):
 
         timeout = kwargs.pop("timeout", 60)
@@ -38,16 +37,16 @@ class Request:
         self._guest_token = None
         self._session = httpx.AsyncClient(
             headers={
-                'user-agent': constants.REQUEST_USER_AGENT,
-                'sec-ch-ua-platform': f'"{random.choice(constants.REQUEST_PLATFORMS)}"',
-                'x-twitter-client-language': 'en',
-                'origin': 'https://x.com'
+                "user-agent": constants.REQUEST_USER_AGENT,
+                "sec-ch-ua-platform": f'"{random.choice(constants.REQUEST_PLATFORMS)}"',
+                "x-twitter-client-language": "en",
+                "origin": "https://x.com",
             },
             http2=True,
             proxy=proxy,
             timeout=timeout,
             follow_redirects=True,
-            **kwargs
+            **kwargs,
         )
         self._builder = UrlBuilder()
         self._transaction = None
@@ -85,35 +84,35 @@ class Request:
             custom_headers = {}
 
         default_headers = {
-            'accept': '*/*',
-            'accept-language': 'en-PK,en;q=0.9',
-            'content-type': 'application/x-www-form-urlencoded',
-            'referer': 'https://x.com/',
-            'authorization': constants.DEFAULT_BEARER_TOKEN,
-            'sec-ch-ua': constants.REQUEST_USER_AGENT_CH,
-            'sec-ch-ua-mobile': '?0',
-            'sec-fetch-dest': 'empty',
-            'sec-fetch-mode': 'cors',
-            'sec-fetch-site': 'same-site',
-            'x-csrf-token': self._get_csrf(),
-            'x-twitter-active-user': 'yes',
-            'x-twitter-client-language': 'en',
-            'priority': 'u=1, i',
-            'x-client-uuid': str(uuid.uuid4())
+            "accept": "*/*",
+            "accept-language": "en-PK,en;q=0.9",
+            "content-type": "application/x-www-form-urlencoded",
+            "referer": "https://x.com/",
+            "authorization": constants.DEFAULT_BEARER_TOKEN,
+            "sec-ch-ua": constants.REQUEST_USER_AGENT_CH,
+            "sec-ch-ua-mobile": "?0",
+            "sec-fetch-dest": "empty",
+            "sec-fetch-mode": "cors",
+            "sec-fetch-site": "same-site",
+            "x-csrf-token": self._get_csrf(),
+            "x-twitter-active-user": "yes",
+            "x-twitter-client-language": "en",
+            "priority": "u=1, i",
+            "x-client-uuid": str(uuid.uuid4()),
         }
 
         session_headers = self._session.headers
         default_headers.update(session_headers)
 
         if self._guest_token or self._cookie:
-            default_headers['content-type'] = 'application/json'
-            default_headers['sec-fetch-site'] = 'same-origin'
+            default_headers["content-type"] = "application/json"
+            default_headers["sec-fetch-site"] = "same-origin"
 
             if self._cookie:
-                default_headers['x-twitter-auth-type'] = 'OAuth2Session'
+                default_headers["x-twitter-auth-type"] = "OAuth2Session"
 
             if self._guest_token and not self._cookie:
-                default_headers['x-guest-token'] = self._guest_token
+                default_headers["x-guest-token"] = self._guest_token
 
         default_headers.update(custom_headers)
 
@@ -144,12 +143,12 @@ class Request:
         url = response.url
         headers = response.headers
 
-        if all(key in headers for key in ['x-rate-limit-reset', 'x-rate-limit-remaining']):
+        if all(key in headers for key in ["x-rate-limit-reset", "x-rate-limit-remaining"]):
             self._limits[func] = dict(
                 path=url.path if not isinstance(url, str) else url,
                 func=func,
-                limit_reset=int(headers['x-rate-limit-reset']),
-                limit_remaining=int(headers['x-rate-limit-remaining'])
+                limit_reset=int(headers["x-rate-limit-reset"]),
+                limit_remaining=int(headers["x-rate-limit-remaining"]),
             )
 
     async def _update_cookies(self, response):
@@ -230,7 +229,9 @@ class Request:
         if ignore_none_data and len(response.text) == 0:
             return None
 
-        if (not response_json and response.text and response.text.lower() == "rate limit exceeded") or response.status_code == 429:
+        if (
+            not response_json and response.text and response.text.lower() == "rate limit exceeded"
+        ) or response.status_code == 429:
             response_json = {"errors": [{"code": 88, "message": "Rate limit exceeded."}]}
         elif not response_json and response.status_code in [403, 401]:
             response_json = {"errors": [{"code": 32, "message": "Couldn't authenticate you"}]}
@@ -240,11 +241,11 @@ class Request:
                 error_code=response.status_code,
                 error_name="Server Error",
                 response=response,
-                message="Unknown Error Occurs on Twitter"
+                message="Unknown Error Occurs on Twitter",
             )
 
-        if response_json.get("errors") and not response_json.get('data'):
-            error = response_json['errors'][0]
+        if response_json.get("errors") and not response_json.get("data"):
+            error = response_json["errors"][0]
 
             error_code = error.get("code", 0)
             error_message = error.get("message")
@@ -283,21 +284,29 @@ class Request:
             if response.status_code not in range(200, 300):
                 response = await self._session.request(method="GET", url=self._builder.URL_HOME_PAGE, headers=headers)
 
-            home_page = bs4.BeautifulSoup(response.content, 'lxml')
+            home_page = bs4.BeautifulSoup(response.content, "lxml")
             migration_url = home_page.select_one("meta[http-equiv='refresh']")
-            migration_redirection_url = re.search(MIGRATION_REGEX, str(migration_url)) or re.search(MIGRATION_REGEX, str(response.content))
+            migration_redirection_url = re.search(MIGRATION_REGEX, str(migration_url)) or re.search(
+                MIGRATION_REGEX, str(response.content)
+            )
 
             if migration_redirection_url:
-                response = await self._session.request(method="GET", url=migration_redirection_url.group(0), headers=headers)
-                home_page = bs4.BeautifulSoup(response.content, 'lxml')
-            migration_form = home_page.select_one("form[name='f']") or home_page.select_one("form[action='https://x.com/x/migrate']")
+                response = await self._session.request(
+                    method="GET", url=migration_redirection_url.group(0), headers=headers
+                )
+                home_page = bs4.BeautifulSoup(response.content, "lxml")
+            migration_form = home_page.select_one("form[name='f']") or home_page.select_one(
+                "form[action='https://x.com/x/migrate']"
+            )
 
             if migration_form:
-                url = migration_form.attrs.get("action", 'https://x.com/x/migrate')
+                url = migration_form.attrs.get("action", "https://x.com/x/migrate")
                 method = migration_form.attrs.get("method", "POST")
-                request_payload = {input_field.get("name"): input_field.get("value") for input_field in migration_form.select("input")}
+                request_payload = {
+                    input_field.get("name"): input_field.get("value") for input_field in migration_form.select("input")
+                }
                 response = await self._session.request(method=method, url=url, data=request_payload, headers=headers)
-                home_page = bs4.BeautifulSoup(response.content, 'lxml')
+                home_page = bs4.BeautifulSoup(response.content, "lxml")
         except Exception as twitter_home_error:
             raise ValueError(f"Unable to get Twitter Home Page : {str(twitter_home_error)}")
         return home_page
@@ -311,7 +320,7 @@ class Request:
             request_data["headers"] = headers
             this_response = await self._session.request(**request_data)
             this_response = this_response.json()
-            token = this_response.get('guest_token')  # noqa
+            token = this_response.get("guest_token")  # noqa
         except Exception:
             pass
 
@@ -350,11 +359,9 @@ class Request:
 
     async def get_login_token_periscope(self, jwt):
         request = self._builder.get_login_token_periscope(jwt)
-        request["headers"].update({
-            'x-attempt': '1',
-            'x-idempotence': str(int(time.time() * 1000)),
-            'x-periscope-user-agent': 'Twitter/m5'
-        })
+        request["headers"].update(
+            {"x-attempt": "1", "x-idempotence": str(int(time.time() * 1000)), "x-periscope-user-agent": "Twitter/m5"}
+        )
         response = await self.__get_response__(**request)
         return response
 
@@ -363,13 +370,22 @@ class Request:
         periscope_jwt = periscope_jwt_res.get("data", {}).get("authenticate_periscope")
 
         if not periscope_jwt:
-            raise TwitterError(500, "PeriScopeTokenFetchFailed", periscope_jwt_res, f"Unable to Get Periscope JWT Token: {periscope_jwt_res}")
+            raise TwitterError(
+                500,
+                "PeriScopeTokenFetchFailed",
+                periscope_jwt_res,
+                f"Unable to Get Periscope JWT Token: {periscope_jwt_res}",
+            )
 
         periscope_cookie_res = await self.get_login_token_periscope(periscope_jwt)
         periscope_cookie = periscope_cookie_res.get("cookie")
         if not periscope_cookie:
-            raise TwitterError(500, "PeriScopeCookieFetchFailed", periscope_cookie_res,
-                               f"Unable to Get Periscope Cookie: {periscope_cookie_res}")
+            raise TwitterError(
+                500,
+                "PeriScopeCookieFetchFailed",
+                periscope_cookie_res,
+                f"Unable to Get Periscope Cookie: {periscope_cookie_res}",
+            )
 
         return periscope_cookie
 
@@ -397,7 +413,7 @@ class Request:
 
     async def login(self, _url, _payload):
         request_data = self._builder.build_flow(_url)
-        request_data['json'] = _payload
+        request_data["json"] = _payload
         request_data["headers"] = {"content-type": "application/json", "x-csrf-token": None}
         response = await self.__get_response__(True, **request_data)
         return response
@@ -435,7 +451,7 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def search_typehead(self, q, result_type='events,users,topics,lists'):
+    async def search_typehead(self, q, result_type="events,users,topics,lists"):
         request = self._builder.search_typehead(q, result_type)
         response = await self.__get_response__(**request)
         return response
@@ -521,13 +537,13 @@ class Request:
 
     async def update_conversation_name(self, conversation_id, name):
         request_data = self._builder.update_conversation_group_name(conversation_id, name)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
     async def update_conversation_avatar(self, conversation_id, avatar_id):
         request_data = self._builder.update_conversation_group_avatar(conversation_id, avatar_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(ignore_none_data=True, **request_data)
         return response
 
@@ -536,13 +552,17 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def send_message(self, conversation_id, text, media_id, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
-        request_data = self._builder.send_message(conversation_id, text, media_id, reply_to_message_id, audio_only, quote_tweet_id)
+    async def send_message(
+        self, conversation_id, text, media_id, reply_to_message_id=None, audio_only=False, quote_tweet_id=None
+    ):
+        request_data = self._builder.send_message(
+            conversation_id, text, media_id, reply_to_message_id, audio_only, quote_tweet_id
+        )
         response = await self.__get_response__(**request_data)
         return response
 
     async def send_message_reaction(self, reaction_emoji, conversation_id, message_id):
-        request_data = self._builder.send_message_reaction( reaction_emoji, conversation_id, message_id)
+        request_data = self._builder.send_message_reaction(reaction_emoji, conversation_id, message_id)
         response = await self.__get_response__(**request_data)
         return response
 
@@ -561,15 +581,39 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-    async def create_tweet(self, text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline):
+    async def create_tweet(
+        self, text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline
+    ):
         if pool:
             response = await self.create_pool(pool)
-            pool = response.get('card_uri')
+            pool = response.get("card_uri")
 
         if len(text) > 280:
-            request_data = self._builder.create_note_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline)
+            request_data = self._builder.create_note_tweet(
+                text,
+                files,
+                filter_,
+                reply_to,
+                quote_tweet_url,
+                pool,
+                geo,
+                batch_composed,
+                community_id,
+                post_on_timeline,
+            )
         else:
-            request_data = self._builder.create_tweet(text, files, filter_, reply_to, quote_tweet_url, pool, geo, batch_composed, community_id, post_on_timeline)
+            request_data = self._builder.create_tweet(
+                text,
+                files,
+                filter_,
+                reply_to,
+                quote_tweet_url,
+                pool,
+                geo,
+                batch_composed,
+                community_id,
+                post_on_timeline,
+            )
         response = await self.__get_response__(**request_data)
         return response
 
@@ -590,8 +634,8 @@ class Request:
 
     async def upload_media_append(self, media_id, payload, headers, segment_index):
         request_data = self._builder.upload_media_append(media_id, segment_index)
-        request_data['headers'] = headers
-        request_data['data'] = payload
+        request_data["headers"] = headers
+        request_data["data"] = payload
 
         response = await self.__get_response__(ignore_none_data=True, **request_data)
         return response
@@ -680,7 +724,6 @@ class Request:
         response = await self.__get_response__(**request_data)
         return response
 
-
     async def get_tweet_notifications(self, cursor):
         request_data = self._builder.get_new_user_tweet_notification(cursor)
         response = await self.__get_response__(**request_data)
@@ -688,37 +731,37 @@ class Request:
 
     async def follow_user(self, user_id):
         request_data = self._builder.follow_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unfollow_user(self, user_id):
         request_data = self._builder.unfollow_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def block_user(self, user_id):
         request_data = self._builder.block_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unblock_user(self, user_id):
         request_data = self._builder.unblock_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def mute_user(self, user_id):
         request_data = self._builder.mute_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def unmute_user(self, user_id):
         request_data = self._builder.un_mute_user(user_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
@@ -845,7 +888,7 @@ class Request:
 
     async def get_new_grok_response(self, conversation_id, responses):
         request_data = self._builder.get_grok_new_response(conversation_id, responses)
-        response = await self.__get_response__(is_document = True, **request_data)
+        response = await self.__get_response__(is_document=True, **request_data)
         return response
 
     async def get_suggested_users(self):
@@ -863,10 +906,7 @@ class Request:
             self._periscope_cookie = await self.get_periscope_cookie()
 
         request_data = self._builder.get_suggested_audio_space(self._periscope_cookie, languages)
-        request_data["headers"].update({
-            "authorization": None,
-            "cookie": None
-        })
+        request_data["headers"].update({"authorization": None, "cookie": None})
         response = await self.__get_response__(**request_data)
         return response
 
@@ -887,35 +927,38 @@ class Request:
 
     async def update_profile_image(self, media_id):
         request_data = self._builder.update_profile_image(media_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
     async def update_profile_banner(self, media_id):
         request_data = self._builder.update_profile_banner(media_id)
-        request_data['headers']['content-type'] = "application/x-www-form-urlencoded"
+        request_data["headers"]["content-type"] = "application/x-www-form-urlencoded"
         response = await self.__get_response__(**request_data)
         return response
 
-
-    async def download_media(self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None):
+    async def download_media(
+        self, media_url, filename: str = None, progress_callback: Callable[[str, int, int], None] = None
+    ):
         filename = os.path.basename(media_url).split("?")[0] if not filename else filename
         headers = self._get_request_headers()
 
         if media_url.startswith("https://ton.twitter.com") or media_url.startswith("https://ton.x.com"):
-            headers['referer'] = "https://x.com/"
+            headers["referer"] = "https://x.com/"
 
-        async with self._session.stream('GET', media_url, follow_redirects=True, headers=headers, timeout=600) as response:
+        async with self._session.stream(
+            "GET", media_url, follow_redirects=True, headers=headers, timeout=600
+        ) as response:
             response.raise_for_status()
 
             try:
-                total_size = int(response.headers['content-length'])
+                total_size = int(response.headers["content-length"])
             except Exception:
                 warnings.warn("Unable to get 'content-length', it will be set to zero")
                 total_size = 0
 
             downloaded = 0
-            f = open(filename, 'wb')
+            f = open(filename, "wb")
             async for chunk in response.aiter_bytes(chunk_size=8192):
                 f.write(chunk)
                 downloaded += len(chunk)

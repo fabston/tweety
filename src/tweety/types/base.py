@@ -5,7 +5,6 @@ from .twDataTypes import ShortUser, Tweet, User
 
 
 class BaseGeneratorClass(dict):
-
     @staticmethod
     def _get_cursor_(response, cursor_key="Bottom"):
         cursor = find_objects(response, "cursorType", cursor_key, recursive=False, none_value={})
@@ -25,7 +24,7 @@ class BaseGeneratorClass(dict):
         if not entry:
             return []
 
-        return entry.get('entries', [])
+        return entry.get("entries", [])
 
     async def get_next_page(self, cursor=0):
         if cursor == 0 and not self.is_next_page:
@@ -39,7 +38,7 @@ class BaseGeneratorClass(dict):
         _result_attr = self._RESULT_ATTR
         getattr(self, _result_attr).extend(results)
         self[_result_attr] = getattr(self, _result_attr)
-        self['cursor'], self['cursor_top'], self['is_next_page'] = self.cursor, self.cursor_top, self.is_next_page
+        self["cursor"], self["cursor_top"], self["is_next_page"] = self.cursor, self.cursor_top, self.is_next_page
 
         for result in results:
             if isinstance(result, (User, ShortUser)):
@@ -51,7 +50,9 @@ class BaseGeneratorClass(dict):
                     self.client._cached_users[str(user.username).lower()] = user.id
 
                 if result.is_retweet and result.retweeted_tweet:
-                    self.client._cached_users[str(result.retweeted_tweet.author.username).lower()] = result.retweeted_tweet.author.id
+                    self.client._cached_users[str(result.retweeted_tweet.author.username).lower()] = (
+                        result.retweeted_tweet.author.id
+                    )
 
         return results
 

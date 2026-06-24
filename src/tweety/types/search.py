@@ -1,4 +1,3 @@
-
 from ..filters import SearchFilters
 from ..utils import find_objects
 from . import Excel, List, Tweet, User
@@ -13,7 +12,7 @@ class Search(BaseGeneratorClass):
         "homeConversation": SelfThread,
         "profile": SelfThread,
         "user": User,
-        "list": List
+        "list": List,
     }
     _RESULT_ATTR = "results"
 
@@ -58,7 +57,7 @@ class Search(BaseGeneratorClass):
         return thisObjects, cursor, cursor_top
 
     def _get_target_object(self, obj):
-        entry_type = str(obj['entryId']).split("-")[0]
+        entry_type = str(obj["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     @staticmethod
@@ -74,8 +73,8 @@ class Search(BaseGeneratorClass):
     def _get_list_entries(entries):
         results = []
         for entry in entries:
-            if str(entry['entryId']).split("-")[0] == "list":
-                for item in entry['content']['items']:
+            if str(entry["entryId"]).split("-")[0] == "list":
+                for item in entry["content"]["items"]:
                     results.append(item)
         return results
 
@@ -87,11 +86,9 @@ class Search(BaseGeneratorClass):
 
 
 class TypeHeadSearch(dict):
-    DATA_TYPES = {
-        "users": User
-    }
+    DATA_TYPES = {"users": User}
 
-    def __init__(self, client, keyword, result_type='events,users,topics,lists'):
+    def __init__(self, client, keyword, result_type="events,users,topics,lists"):
         super().__init__()
         self.client = client
         self.keyword = keyword
@@ -104,13 +101,13 @@ class TypeHeadSearch(dict):
             for result in response.get(_type_name, []):
                 try:
                     if _type_name == "users":
-                        result['__typename'] = "User"
+                        result["__typename"] = "User"
 
                     parsed = _type_object(self.client, result)
                     self.results.append(parsed)
                 except Exception:
                     pass
-        self['results'] = self.results
+        self["results"] = self.results
         return self.results
 
     def __getitem__(self, index):
@@ -128,4 +125,3 @@ class TypeHeadSearch(dict):
 
     def __repr__(self):
         return f"TypeHeadSearch(keyword={self.keyword})"
-

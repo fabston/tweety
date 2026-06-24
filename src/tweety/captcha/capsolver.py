@@ -13,12 +13,7 @@ class CapSolver(BaseCaptchaSolver):
         super().init(cookies=twitter_client.session.cookies_dict, proxy=twitter_client._proxy)
         return self
 
-    def get_solved_token(
-            self,
-            websitePublicKey,
-            websiteUrl,
-            blob_data=None
-    ) -> str:
+    def get_solved_token(self, websitePublicKey, websiteUrl, blob_data=None) -> str:
         capsolver.api_key = self._api_key
 
         request = {
@@ -28,17 +23,18 @@ class CapSolver(BaseCaptchaSolver):
         }
         if self._proxy is not None:
             proxy_dict = unpack_proxy(self._proxy)
-            request.update({
-                "type": "FunCaptchaTask",
-                "proxyType": proxy_dict.get("type"),
-                "proxyAddress": proxy_dict.get("host"),
-                "proxyPort": proxy_dict.get("port"),
-                "proxyLogin": proxy_dict.get("username"),
-                "proxyPassword": proxy_dict.get("password")
-            })
+            request.update(
+                {
+                    "type": "FunCaptchaTask",
+                    "proxyType": proxy_dict.get("type"),
+                    "proxyAddress": proxy_dict.get("host"),
+                    "proxyPort": proxy_dict.get("port"),
+                    "proxyLogin": proxy_dict.get("username"),
+                    "proxyPassword": proxy_dict.get("password"),
+                }
+            )
 
         if blob_data:
-            request["data"] = f"{{\"blob\": \"{blob_data}\"}}"
+            request["data"] = f'{{"blob": "{blob_data}"}}'
 
         return capsolver.solve(request)["token"]
-

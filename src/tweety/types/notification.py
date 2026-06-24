@@ -20,13 +20,13 @@ class TweetNotifications(BaseGeneratorClass):
         _tweets = []
 
         response = await self.client.http.get_tweet_notifications(cursor=cursor)
-        users = response.get('globalObjects', {}).get('users', {})
-        tweets = response.get('globalObjects', {}).get('tweets', {})
+        users = response.get("globalObjects", {}).get("users", {})
+        tweets = response.get("globalObjects", {}).get("tweets", {})
 
         for tweet_id, tweet in tweets.items():
-            user = users.get(str(tweet['user_id']))
-            user['__typename'] = "User"
-            tweet['author'], tweet['rest_id'], tweet['__typename'] = user, tweet_id, "Tweet"
+            user = users.get(str(tweet["user_id"]))
+            user["__typename"] = "User"
+            tweet["author"], tweet["rest_id"], tweet["__typename"] = user, tweet_id, "Tweet"
 
             try:
                 parsed = Tweet(self.client, tweet, response)

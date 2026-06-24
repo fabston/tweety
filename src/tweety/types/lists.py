@@ -20,7 +20,7 @@ class Lists(BaseGeneratorClass):
     @staticmethod
     def _get_user_owned_lists(entries):
         for entry in entries:
-            entry_type = str(entry['entryId']).split("-")[0]
+            entry_type = str(entry["entryId"]).split("-")[0]
             if entry_type == "owned":
                 return entry
 
@@ -68,7 +68,7 @@ class ListTweets(BaseGeneratorClass):
         self.wait_time = wait_time
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):
@@ -132,6 +132,7 @@ class ListMembers(BaseGeneratorClass):
 
     def __repr__(self):
         return f"ListMembers(id={self.list_id}, count={self.__len__()})"
+
 
 class ListFollowers(BaseGeneratorClass):
     _RESULT_ATTR = "users"

@@ -24,7 +24,6 @@ class UserFollowers(BaseGeneratorClass):
 
         for entry in entries:
             try:
-
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
@@ -59,7 +58,6 @@ class UserFollowings(BaseGeneratorClass):
 
         for entry in entries:
             try:
-
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
@@ -94,7 +92,6 @@ class UserSubscribers(BaseGeneratorClass):
 
         for entry in entries:
             try:
-
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
@@ -129,7 +126,6 @@ class MutualFollowers(BaseGeneratorClass):
 
         for entry in entries:
             try:
-
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)
@@ -164,7 +160,6 @@ class BlockedUsers(BaseGeneratorClass):
 
         for entry in entries:
             try:
-
                 parsed = User(self.client, entry, None)
                 if parsed:
                     _users.append(parsed)

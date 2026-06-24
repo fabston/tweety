@@ -31,7 +31,9 @@ class Inbox(dict):
 
     async def _parse_response(self, response):
         this_page = []
-        _initial_inbox = response.get('inbox_initial_state') or response.get('user_events') or response.get('inbox_timeline')
+        _initial_inbox = (
+            response.get("inbox_initial_state") or response.get("user_events") or response.get("inbox_timeline")
+        )
         _conversations = _initial_inbox.get("conversations", {})
 
         for conservation in _conversations.values():
@@ -61,10 +63,14 @@ class Inbox(dict):
                 response = await self._client.http.get_inbox_updates(cursor=self.cursor)
 
             page, inbox = await self._parse_response(response)
-            self.cursor = self['cursor'] = inbox.get('cursor')
-            self.last_seen_event_id = self['last_seen_event_id'] = inbox.get('last_seen_event_id')
-            self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = inbox.get('trusted_last_seen_event_id')
-            self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = inbox.get('untrusted_last_seen_event_id')
+            self.cursor = self["cursor"] = inbox.get("cursor")
+            self.last_seen_event_id = self["last_seen_event_id"] = inbox.get("last_seen_event_id")
+            self.trusted_last_seen_event_id = self["trusted_last_seen_event_id"] = inbox.get(
+                "trusted_last_seen_event_id"
+            )
+            self.untrusted_last_seen_event_id = self["untrusted_last_seen_event_id"] = inbox.get(
+                "untrusted_last_seen_event_id"
+            )
 
             if inbox.get("inbox_timelines"):
                 self._inbox_timelines = inbox.get("inbox_timelines", {})
@@ -94,7 +100,7 @@ class Inbox(dict):
             else:
                 page, inbox = [], {}
 
-            return page, inbox.get('min_entry_id', 0), inbox.get('status', self.AT_END_STATUS)
+            return page, inbox.get("min_entry_id", 0), inbox.get("status", self.AT_END_STATUS)
 
     async def get_new_messages(self, cursor=None):
         if not cursor:
@@ -102,10 +108,12 @@ class Inbox(dict):
 
         response = await self._client.http.get_inbox_updates(cursor=cursor)
         page, inbox = await self._parse_response(response)
-        self.cursor = self['cursor'] = inbox.get('cursor')
-        self.last_seen_event_id = self['last_seen_event_id'] = inbox.get('last_seen_event_id')
-        self.trusted_last_seen_event_id = self['trusted_last_seen_event_id'] = inbox.get('trusted_last_seen_event_id')
-        self.untrusted_last_seen_event_id = self['untrusted_last_seen_event_id'] = inbox.get('untrusted_last_seen_event_id')
+        self.cursor = self["cursor"] = inbox.get("cursor")
+        self.last_seen_event_id = self["last_seen_event_id"] = inbox.get("last_seen_event_id")
+        self.trusted_last_seen_event_id = self["trusted_last_seen_event_id"] = inbox.get("trusted_last_seen_event_id")
+        self.untrusted_last_seen_event_id = self["untrusted_last_seen_event_id"] = inbox.get(
+            "untrusted_last_seen_event_id"
+        )
 
         if inbox.get("inbox_timelines"):
             self._inbox_timelines = inbox.get("inbox_timelines", {})
@@ -115,19 +123,19 @@ class Inbox(dict):
     async def get_next_page(self, page_type=None):
         if not self._got_initial:
             page, cursor, _ = await self.get_page()
-            self.cursor = self['cursor'] = cursor
+            self.cursor = self["cursor"] = cursor
             return page
         else:
             if not page_type or page_type not in INBOX_PAGE_TYPES:
                 page_type = INBOX_PAGE_TYPE_TRUSTED
 
-            if self._inbox_timelines[page_type]['status'] == self.AT_END_STATUS:
+            if self._inbox_timelines[page_type]["status"] == self.AT_END_STATUS:
                 page_type = INBOX_PAGE_TYPE_UNTRUSTED
 
             page_attrs = self._inbox_timelines.get(page_type, {})
 
-            min_entry_id = page_attrs.get('min_entry_id', 0)
-            status = page_attrs.get('status', self.AT_END_STATUS)
+            min_entry_id = page_attrs.get("min_entry_id", 0)
+            status = page_attrs.get("status", self.AT_END_STATUS)
 
             if status == self.AT_END_STATUS:
                 return []
@@ -164,8 +172,8 @@ class Inbox(dict):
             for message in conv.messages:
                 self.messages.append(message)
 
-        self['conversations'] = self.conversations
-        self['messages'] = self.messages
+        self["conversations"] = self.conversations
+        self["messages"] = self.messages
 
     def get_conversation(self, conversation_id):
         for conv in self.conversations:
@@ -203,23 +211,23 @@ class Conversation(dict):
         self._raw = conversation
         self._get_all_messages = get_all_messages
         self.admin = None
-        self.id = self['id'] = self._get_key("conversation_id")
-        self.last_read_event_id = self['last_read_event_id'] = self._get_key("last_read_event_id")
-        self.low_quality = self['low_quality'] = self._get_key("low_quality")
-        self.max_entry_id = self['max_entry_id'] = self._get_key("max_entry_id")
-        self.min_entry_id = self['min_entry_id'] = self._get_key("min_entry_id")
-        self.muted = self['muted'] = self._get_key("muted")
-        self.notifications_disabled = self['notifications_disabled'] = self._get_key("notifications_disabled")
-        self.nsfw = self['nsfw'] = self._get_key("nsfw")
-        self.avatar_url = self['avatar_image_https'] = self._get_key("avatar_image_https")  # only for Group
-        self.created_at = self['create_time'] = parse_time(self._get_key("create_time"))  # only for Group
-        self.created_by_user_id = self['created_by_user_id'] = self._get_key("created_by_user_id")  # only for Group
-        self.read_only = self['read_only'] = self._get_key("read_only")
-        self.trusted = self['trusted'] = self._get_key("trusted")
-        self.type = self['type'] = self._get_key("type")
-        self.participants = self['participants'] = self.get_participants()
-        self.name = self['name'] = self._get_key("name", self._get_one_to_one_name())
-        self.messages = self['messages'] = self.parse_messages()
+        self.id = self["id"] = self._get_key("conversation_id")
+        self.last_read_event_id = self["last_read_event_id"] = self._get_key("last_read_event_id")
+        self.low_quality = self["low_quality"] = self._get_key("low_quality")
+        self.max_entry_id = self["max_entry_id"] = self._get_key("max_entry_id")
+        self.min_entry_id = self["min_entry_id"] = self._get_key("min_entry_id")
+        self.muted = self["muted"] = self._get_key("muted")
+        self.notifications_disabled = self["notifications_disabled"] = self._get_key("notifications_disabled")
+        self.nsfw = self["nsfw"] = self._get_key("nsfw")
+        self.avatar_url = self["avatar_image_https"] = self._get_key("avatar_image_https")  # only for Group
+        self.created_at = self["create_time"] = parse_time(self._get_key("create_time"))  # only for Group
+        self.created_by_user_id = self["created_by_user_id"] = self._get_key("created_by_user_id")  # only for Group
+        self.read_only = self["read_only"] = self._get_key("read_only")
+        self.trusted = self["trusted"] = self._get_key("trusted")
+        self.type = self["type"] = self._get_key("type")
+        self.participants = self["participants"] = self.get_participants()
+        self.name = self["name"] = self._get_key("name", self._get_one_to_one_name())
+        self.messages = self["messages"] = self.parse_messages()
         self.is_group = self.type == self.TYPE_GROUP_DM
         self.cursor = None
         self.conversation_status = self.HAS_MORE_STATUS
@@ -233,13 +241,13 @@ class Conversation(dict):
 
     def get_participants(self):
         users = []
-        participants = self._raw['participants']
+        participants = self._raw["participants"]
         for participant in participants:
             try:
-                user = self._inbox['users'].get(str(participant['user_id']))
+                user = self._inbox["users"].get(str(participant["user_id"]))
 
                 if user:
-                    user['__typename'] = "User"
+                    user["__typename"] = "User"
                     this_user = User(self._client, user)
                 else:
                     this_user = str(participant["user_id"])
@@ -257,51 +265,47 @@ class Conversation(dict):
         return self._raw.get(keyName, default)
 
     def _parse_message(self, entry):
-        if entry.get('message') and str(entry['message']['conversation_id']) == str(self.id):
-            return Message(entry['message'], self._inbox, self._client)
-        elif entry.get('welcome_message_create') and str(entry['welcome_message_create']['conversation_id']) == str(self.id):
-            return Message(entry['welcome_message_create'], self._inbox, self._client)
-        elif entry.get('participants_join') and str(entry['participants_join']['conversation_id']) == str(self.id):
+        if entry.get("message") and str(entry["message"]["conversation_id"]) == str(self.id):
+            return Message(entry["message"], self._inbox, self._client)
+        elif entry.get("welcome_message_create") and str(entry["welcome_message_create"]["conversation_id"]) == str(
+            self.id
+        ):
+            return Message(entry["welcome_message_create"], self._inbox, self._client)
+        elif entry.get("participants_join") and str(entry["participants_join"]["conversation_id"]) == str(self.id):
             return MessageParticipantUpdate(
-                'participants_join',
-                entry.get('participants_join'),
-                self._inbox,
-                self._client
+                "participants_join", entry.get("participants_join"), self._inbox, self._client
             )
-        elif entry.get('join_conversation') and str(entry['join_conversation']['conversation_id']) == str(self.id):
+        elif entry.get("join_conversation") and str(entry["join_conversation"]["conversation_id"]) == str(self.id):
             return MessageParticipantUpdate(
-                'participants_join',
-                entry.get('join_conversation'),
-                self._inbox,
-                self._client
+                "participants_join", entry.get("join_conversation"), self._inbox, self._client
             )
-        elif entry.get('participants_leave') and str(entry['participants_leave']['conversation_id']) == str(self.id):
+        elif entry.get("participants_leave") and str(entry["participants_leave"]["conversation_id"]) == str(self.id):
             return MessageParticipantUpdate(
-                'participants_leave',
-                entry.get('participants_leave'),
-                self._inbox,
-                self._client
+                "participants_leave", entry.get("participants_leave"), self._inbox, self._client
             )
-        elif entry.get('conversation_name_update') and str(entry['conversation_name_update']['conversation_id']) == str(self.id):
-            return MessageNameUpdate(entry['conversation_name_update'], self._inbox, self._client)
-        elif entry.get('conversation_create') and str(entry['conversation_create']['conversation_id']) == str(self.id):
-            return MessageConversationCreated(entry['conversation_create'], self._inbox, self._client)
-        elif entry.get('conversation_avatar_update') and str(entry['conversation_avatar_update']['conversation_id']) == str(self.id):
+        elif entry.get("conversation_name_update") and str(entry["conversation_name_update"]["conversation_id"]) == str(
+            self.id
+        ):
+            return MessageNameUpdate(entry["conversation_name_update"], self._inbox, self._client)
+        elif entry.get("conversation_create") and str(entry["conversation_create"]["conversation_id"]) == str(self.id):
+            return MessageConversationCreated(entry["conversation_create"], self._inbox, self._client)
+        elif entry.get("conversation_avatar_update") and str(
+            entry["conversation_avatar_update"]["conversation_id"]
+        ) == str(self.id):
             return MessageConversationAvatarUpdate(entry["conversation_avatar_update"], self._inbox, self._client)
-        elif entry.get('trust_conversation') and str(entry['trust_conversation']['conversation_id']) == str(self.id):
+        elif entry.get("trust_conversation") and str(entry["trust_conversation"]["conversation_id"]) == str(self.id):
             return MessageTrustConversation(entry["trust_conversation"], self._client)
-        elif entry.get("end_av_broadcast") and str(entry['end_av_broadcast']['conversation_id']) == str(self.id):
+        elif entry.get("end_av_broadcast") and str(entry["end_av_broadcast"]["conversation_id"]) == str(self.id):
             return Call(entry["end_av_broadcast"], self._client)
-        elif entry.get("conversation_read") and str(entry['conversation_read']['conversation_id']) == str(self.id):
-            return MessageConversationRead(entry['conversation_read'], self._client)
-
+        elif entry.get("conversation_read") and str(entry["conversation_read"]["conversation_id"]) == str(self.id):
+            return MessageConversationRead(entry["conversation_read"], self._client)
 
         return None
 
     def parse_messages(self):
         messages = []
         if not self._get_all_messages:
-            for entry in self._inbox.get('entries', []):
+            for entry in self._inbox.get("entries", []):
                 _message = self._parse_message(entry)
                 if _message:
                     messages.append(_message)
@@ -312,9 +316,9 @@ class Conversation(dict):
     async def get_page(self, cursor, till_date=None):
         messages = []
         response = await self._client.http.get_conversation(self.id, cursor)
-        conversation_status = response.get('conversation_timeline', {}).get('status', "AT_END")
-        cursor = response.get('conversation_timeline', {}).get('min_entry_id', 0)
-        for entry in response.get('conversation_timeline', {}).get('entries', []):
+        conversation_status = response.get("conversation_timeline", {}).get("status", "AT_END")
+        cursor = response.get("conversation_timeline", {}).get("min_entry_id", 0)
+        for entry in response.get("conversation_timeline", {}).get("entries", []):
             _message = self._parse_message(entry)
 
             if _message:
@@ -331,7 +335,9 @@ class Conversation(dict):
 
     async def get_all_messages(self, wait_time=2, cursor=0, till_date=None, count=None):
         all_messages = []
-        async for _, messages in self.iter_all_messages(wait_time=wait_time, cursor=cursor, till_date=till_date, count=count):
+        async for _, messages in self.iter_all_messages(
+            wait_time=wait_time, cursor=cursor, till_date=till_date, count=count
+        ):
             all_messages.extend(messages)
         return all_messages
 
@@ -357,7 +363,15 @@ class Conversation(dict):
             await asyncio.sleep(parse_wait_time(wait_time))
 
     async def send_message(self, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
-        return await self._client.send_message(self.id, text=text, file=file, in_group=self.type == self.TYPE_GROUP_DM, reply_to_message_id=reply_to_message_id, audio_only=audio_only, quote_tweet_id=quote_tweet_id)
+        return await self._client.send_message(
+            self.id,
+            text=text,
+            file=file,
+            in_group=self.type == self.TYPE_GROUP_DM,
+            reply_to_message_id=reply_to_message_id,
+            audio_only=audio_only,
+            quote_tweet_id=quote_tweet_id,
+        )
 
     def __eq__(self, other):
         if isinstance(other, Conversation):
@@ -367,6 +381,7 @@ class Conversation(dict):
 
     def __repr__(self):
         return f"Conversation(id={self.id}, muted={self.muted}, nsfw={self.nsfw}, participants={self.participants})"
+
 
 class MessageConversationRead(dict):
     def __init__(self, update, client):
@@ -380,6 +395,7 @@ class MessageConversationRead(dict):
 
     def __repr__(self):
         return f"MessageConversationRead(id={self.id}, time={self.time}, last_read_event_id={self.last_read_event_id})"
+
 
 class Call(dict):
     def __init__(self, update, client):
@@ -398,18 +414,18 @@ class Call(dict):
         return f"Call(id={self.id}, time={self.time}, end_reason={self.end_reason}, type={self.type}, is_caller={self.is_caller})"
 
 
-
 class MessageTrustConversation(dict):
     def __init__(self, update, client):
         super().__init__()
         self._raw = update
         self._client = client
         self.id = self["id"] = self._raw["id"]
-        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.time = self["time"] = parse_time(self._raw.get("time"))
         self.reason = self["reason"] = self._raw.get("reason")
 
     def __repr__(self):
         return f"MessageTrustConversation(id={self.id}, time={self.time}, reason={self.reason})"
+
 
 class MessageParticipantUpdate(dict):
     def __init__(self, update_type, update, _inbox, client):
@@ -418,36 +434,36 @@ class MessageParticipantUpdate(dict):
         self._raw = update
         self._inbox = _inbox
         self._client = client
-        self.id = self['id'] = self._raw['id']
-        self.time = self['time'] = parse_time(self._raw.get('time'))
-        self.participants = self['participants'] = self.get_recipients()
+        self.id = self["id"] = self._raw["id"]
+        self.time = self["time"] = parse_time(self._raw.get("time"))
+        self.participants = self["participants"] = self.get_recipients()
         self.type = self._update_type.replace("participants_", "").upper()
-        self.sender_id = self['sender_id'] = self._raw.get('sender_id')
-        self.sender = self['sender'] = self._get_sender()
+        self.sender_id = self["sender_id"] = self._raw.get("sender_id")
+        self.sender = self["sender"] = self._get_sender()
         self.receiver = None
 
     def _get_sender(self):
         if self.type != "JOIN":
             return None
 
-        this_user = self._inbox.get('users', {}).get(str(self.sender_id))
+        this_user = self._inbox.get("users", {}).get(str(self.sender_id))
         if not this_user:
             return None
 
-        this_user['__typename'] = "User"
+        this_user["__typename"] = "User"
         return User(self._client, this_user)
 
     def get_recipients(self):
         participants = []
-        users = self._raw.get('participants', [])
+        users = self._raw.get("participants", [])
         for user in users:
-            this_user = self._inbox.get('users', {}).get(str(user['user_id']))
+            this_user = self._inbox.get("users", {}).get(str(user["user_id"]))
 
             if this_user:
-                this_user['__typename'] = "User"
+                this_user["__typename"] = "User"
                 participants.append(User(self._client, this_user))
             else:
-                participants.append(str(user['user_id']))
+                participants.append(str(user["user_id"]))
 
         return participants
 
@@ -461,22 +477,22 @@ class MessageNameUpdate(dict):
         self._raw = update
         self._inbox = _inbox
         self._client = client
-        self.id = self['id'] = self._raw['id']
-        self.time = self['time'] = parse_time(self._raw.get('time'))
-        self.name = self['name'] = self._raw['conversation_name']
-        self.by_user_id = self.sender_id = self['by_user_id'] = self._raw.get('by_user_id')
-        self.by_user = self['by_user'] = self._get_by_user()
+        self.id = self["id"] = self._raw["id"]
+        self.time = self["time"] = parse_time(self._raw.get("time"))
+        self.name = self["name"] = self._raw["conversation_name"]
+        self.by_user_id = self.sender_id = self["by_user_id"] = self._raw.get("by_user_id")
+        self.by_user = self["by_user"] = self._get_by_user()
         self.receiver = None
 
     def _get_by_user(self):
         if not self.by_user_id:
             return None
 
-        this_user = self._inbox.get('users', {}).get(str(self.by_user_id))
+        this_user = self._inbox.get("users", {}).get(str(self.by_user_id))
         if not this_user:
             return None
 
-        this_user['__typename'] = "User"
+        this_user["__typename"] = "User"
         return User(self._client, this_user)
 
     def __repr__(self):
@@ -489,8 +505,8 @@ class MessageConversationCreated(dict):
         self._raw = update
         self._inbox = _inbox
         self._client = client
-        self.id = self['id'] = self._raw['id']
-        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.id = self["id"] = self._raw["id"]
+        self.time = self["time"] = parse_time(self._raw.get("time"))
 
     def __repr__(self):
         return f"MessageConversationCreated(id={self.id}, time={self.time})"
@@ -503,13 +519,14 @@ class MessageConversationAvatarUpdate(dict):
         self._inbox = _inbox
         self._client = client
         self.by_user_id = self.sender_id = self["by_user_id"] = self._raw.get("by_user_id")
-        self.id = self['id'] = self._raw['id']
-        self.time = self['time'] = parse_time(self._raw.get('time'))
+        self.id = self["id"] = self._raw["id"]
+        self.time = self["time"] = parse_time(self._raw.get("time"))
         self.conversation_id = self["conversation_id"] = self._raw.get("conversation_id")
         self.avatar_url = self["avatar_url"] = self._raw.get("conversation_avatar_image_https")
 
     def __repr__(self):
         return f"MessageConversationAvatarUpdate(id={self.id}, by_user_id={self.by_user_id})"
+
 
 class MessageReaction(dict):
     def __init__(self, reaction_message, client):
@@ -534,44 +551,53 @@ class Message(dict):
         self._raw = message
         self._inbox = _inbox
         self._client = client
-        self._entities = self._get_message_data('entities', {})
-        self.conversation_id = self['conversation_id'] = self._raw.get('conversation_id')
-        self.id = self['id'] = self._raw.get('id')
-        self.epoch_time = self['epoch_time'] = self._get_message_data('time')
-        self.time = self['time'] = parse_time(self.epoch_time)
-        self.request_id = self['request_id'] = self._raw.get('request_id')
-        self.text = self['text'] = self._get_text()
+        self._entities = self._get_message_data("entities", {})
+        self.conversation_id = self["conversation_id"] = self._raw.get("conversation_id")
+        self.id = self["id"] = self._raw.get("id")
+        self.epoch_time = self["epoch_time"] = self._get_message_data("time")
+        self.time = self["time"] = parse_time(self.epoch_time)
+        self.request_id = self["request_id"] = self._raw.get("request_id")
+        self.text = self["text"] = self._get_text()
         self.receiver_id = self._client.user.id
         self.sender_id = self._get_message_data("sender_id")
-        self.receiver = self['receiver'] = self._client.user
-        self.sender = self['sender'] = self.get_recipient("sender_id")
-        self.media = self['media'] = self._get_media()
-        self.urls = self['urls'] = self._get_urls()
-        self.symbols = self['symbols'] = self._get_symbols()
-        self.hashtags = self['hashtags'] = self._get_hashtags()
-        self.user_mentions = self['user_mentions'] = self._get_user_mentions()
+        self.receiver = self["receiver"] = self._client.user
+        self.sender = self["sender"] = self.get_recipient("sender_id")
+        self.media = self["media"] = self._get_media()
+        self.urls = self["urls"] = self._get_urls()
+        self.symbols = self["symbols"] = self._get_symbols()
+        self.hashtags = self["hashtags"] = self._get_hashtags()
+        self.user_mentions = self["user_mentions"] = self._get_user_mentions()
         self.shared_tweet = self._get_shared_tweet()
         self.reply_to = self._get_reply_to()
         self.edit_count = self._get_message_data("edit_count", 0)
-        self.reactions = [MessageReaction(reaction, self._client) for reaction in self._raw.get("message_reactions", [])]
+        self.reactions = [
+            MessageReaction(reaction, self._client) for reaction in self._raw.get("message_reactions", [])
+        ]
 
     async def reply(self, text, file=None, audio_only=False, quote_tweet_id=None):
-        return await self._client.send_message(self.conversation_id, text=text, file=file, audio_only=audio_only, quote_tweet_id=quote_tweet_id, reply_to_message_id=self.id)
+        return await self._client.send_message(
+            self.conversation_id,
+            text=text,
+            file=file,
+            audio_only=audio_only,
+            quote_tweet_id=quote_tweet_id,
+            reply_to_message_id=self.id,
+        )
 
     async def react(self, reaction_emoji):
         return await self._client.send_message_reaction(reaction_emoji, self.id, self.conversation_id)
 
     def _get_urls(self):
-        return [URL(self._client, i) for i in self._entities.get('urls', [])]
+        return [URL(self._client, i) for i in self._entities.get("urls", [])]
 
     def _get_hashtags(self):
-        return [Hashtag(self._client, i) for i in self._entities.get('hashtags', [])]
+        return [Hashtag(self._client, i) for i in self._entities.get("hashtags", [])]
 
     def _get_symbols(self):
-        return [Symbol(self._client, i) for i in self._entities.get('symbols', [])]
+        return [Symbol(self._client, i) for i in self._entities.get("symbols", [])]
 
     def _get_user_mentions(self):
-        return [ShortUser(self._client, i) for i in self._entities.get('user_mentions', [])]
+        return [ShortUser(self._client, i) for i in self._entities.get("user_mentions", [])]
 
     def _get_message_data(self, dataKey, default=None):
         message_data = self._raw.get("message_data")
@@ -587,15 +613,15 @@ class Message(dict):
         if not user:
             return None
 
-        user = self._inbox.get('users', {}).get(str(user))
+        user = self._inbox.get("users", {}).get(str(user))
         if user:
-            user['__typename'] = "User"
+            user["__typename"] = "User"
             return User(self._client, user)
 
         return None
 
     def _get_text(self):
-        text = self._get_message_data('text')
+        text = self._get_message_data("text")
 
         if text:
             return re.sub(r"https://t\.co/\S+", "", text).strip()
@@ -637,13 +663,13 @@ class Message(dict):
         if self._get_message_data("attachment"):
             attachment = self._get_message_data("attachment")
             if "photo" in list(attachment.keys()):
-                media = attachment.get('photo')
+                media = attachment.get("photo")
 
             if "video" in list(attachment.keys()):
-                media = attachment.get('video')
+                media = attachment.get("video")
 
             if "animated_gif" in list(attachment.keys()):
-                media = attachment.get('animated_gif')
+                media = attachment.get("animated_gif")
 
             if media:
                 return Media(self._client, media)
@@ -661,7 +687,9 @@ class Message(dict):
 
 
 class SendMessage:
-    def __init__(self, client, conversation_id, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None):
+    def __init__(
+        self, client, conversation_id, text, file=None, reply_to_message_id=None, audio_only=False, quote_tweet_id=None
+    ):
         self._conv = conversation_id
         self._text = text
         self._client = client
@@ -672,6 +700,8 @@ class SendMessage:
 
     async def send(self):
         await self._client.send_typing_indicator(self._conv)
-        response = await self._client.http.send_message(self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id)
+        response = await self._client.http.send_message(
+            self._conv, self._text, self._file, self._reply_to_message_id, self._audio_only, self._quote_tweet_id
+        )
         messages = [Message(i["message"], response, self._client) for i in response.get("entries", [])]
         return messages[0] if len(messages) == 1 else messages

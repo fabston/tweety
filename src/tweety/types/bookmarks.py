@@ -35,4 +35,3 @@ class Bookmarks(BaseGeneratorClass):
 
     def to_xlsx(self, filename=None):
         return Excel(self, filename)
-

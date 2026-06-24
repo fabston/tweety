@@ -10,7 +10,6 @@ from .utils import find_objects
 
 
 class AuthMethods:
-
     async def connect(self) -> Optional["User"]:  # noqa: F821
         """
         This method will be used to connect to already saved session in disk
@@ -26,11 +25,11 @@ class AuthMethods:
         return self.user
 
     async def start(
-            self,
-            username: Optional[str] = None,
-            password: Optional[str] = None,
-            *,
-            extra: Optional[str] = None,
+        self,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        *,
+        extra: Optional[str] = None,
     ) -> Optional["User"]:  # noqa: F821
         """
         Interactive Version of `sign_in` which will ask user for inputs
@@ -45,8 +44,8 @@ class AuthMethods:
         :return: .types.twDataTypes.User (the user which is authenticated)
         """
 
-        username = input('Please enter the Username: ') if not username else username
-        password = getpass.getpass('Please enter your password: ') if not password else password
+        username = input("Please enter the Username: ") if not username else username
+        password = getpass.getpass("Please enter your password: ") if not password else password
 
         _extra = extra
         _extra_once = False
@@ -63,11 +62,11 @@ class AuthMethods:
                     raise ask_info
 
     async def sign_in(
-            self,
-            username: str,
-            password: str,
-            *,
-            extra: Optional[str] = None,
+        self,
+        username: str,
+        password: str,
+        *,
+        extra: Optional[str] = None,
     ) -> Optional["User"]:  # noqa: F821
         """
         - This method can be used to sign in to Twitter using username and password
@@ -81,7 +80,7 @@ class AuthMethods:
         :return: .types.twDataTypes.User (the user which is authenticated)
         """
 
-        if self.session.logged_in and self.session.user['username'].lower() == username.lower():
+        if self.session.logged_in and self.session.user["username"].lower() == username.lower():
             try:
                 return await self.connect()
             except InvalidCredentials:
@@ -102,8 +101,8 @@ class AuthMethods:
         return await self._login()
 
     async def load_cookies(
-            self,
-            cookies: Union[str, dict, MozillaCookieJar],
+        self,
+        cookies: Union[str, dict, MozillaCookieJar],
     ) -> Optional["User"]:  # noqa: F821
         """
         This method can be used to load the already authenticated cookies from Twitter
@@ -118,13 +117,13 @@ class AuthMethods:
     async def load_auth_token(self, auth_token: str) -> Optional["User"]:  # noqa: F821
         URL = "https://business.x.com/en"
         temp_cookie = {"auth_token": auth_token}
-        temp_headers = {'authorization': constants.DEFAULT_BEARER_TOKEN}
+        temp_headers = {"authorization": constants.DEFAULT_BEARER_TOKEN}
         res = await self.request.session.get(URL, cookies=temp_cookie)
-        ct0 = res.cookies.get('ct0')
+        ct0 = res.cookies.get("ct0")
 
         if not ct0:
             res = await self.request.session.get(URL, cookies=temp_cookie, headers=temp_headers)
-            ct0 = res.cookies.get('ct0')
+            ct0 = res.cookies.get("ct0")
 
         if not ct0:
             raise DeniedLogin(response=res, message="Auth Token isn't Valid")
@@ -134,18 +133,18 @@ class AuthMethods:
 
     @staticmethod
     def _get_action_text(response) -> str:
-        primary_message = find_objects(response, 'primary_text', None, none_value={})
-        secondary_message = find_objects(response, 'secondary_text', None, none_value={})
+        primary_message = find_objects(response, "primary_text", None, none_value={})
+        secondary_message = find_objects(response, "secondary_text", None, none_value={})
         if primary_message:
             if isinstance(primary_message, list):
                 primary_message = primary_message[0]
 
-            primary_message = primary_message.get('text', '')
+            primary_message = primary_message.get("text", "")
 
         if secondary_message:
             if isinstance(secondary_message, list):
                 secondary_message = secondary_message[0]
-            secondary_message = secondary_message.get('text', '')
+            secondary_message = secondary_message.get("text", "")
         return f"{primary_message}. {secondary_message}"
 
     async def _login(self):
@@ -157,7 +156,7 @@ class AuthMethods:
                 username=self._username,
                 password=self._password,
                 extra=self._extra,
-                captcha_token=self._captcha_token
+                captcha_token=self._captcha_token,
             )
 
             # Twitter now often asks for multiple verifications
@@ -171,7 +170,7 @@ class AuthMethods:
             if response.cookies.get("att"):
                 self.request.headers = {"att": response.cookies.get("att")}
 
-            if self._last_json.get('status') != "success":
+            if self._last_json.get("status") != "success":
                 raise DeniedLogin(response=response, message=response.text)
 
             subtask = self._last_json["subtasks"][0].get("subtask_id")
@@ -201,6 +200,3 @@ class AuthMethods:
                 return await self.connect()
 
         raise DeniedLogin(response=response, message="Unknown Error Occurred")
-
-
-

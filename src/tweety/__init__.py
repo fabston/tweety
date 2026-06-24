@@ -25,7 +25,7 @@ def SyncWrap(cls):
 
     if inspect.isclass(cls):
         for name in dir(cls):
-            if not name.startswith('_') or name != '__init__':
+            if not name.startswith("_") or name != "__init__":
                 if inspect.iscoroutinefunction(getattr(cls, name)):
                     setattr(cls, name, method_wrapper_decorator(getattr(cls, name)))
 
@@ -33,14 +33,10 @@ def SyncWrap(cls):
     return method_wrapper_decorator(cls)
 
 
-class TwitterAsync(
-    UserMethods, BotMethods, UpdateMethods, AuthMethods
-):
+class TwitterAsync(UserMethods, BotMethods, UpdateMethods, AuthMethods):
     pass
 
 
 @SyncWrap
 class Twitter(TwitterAsync):
     pass
-
-

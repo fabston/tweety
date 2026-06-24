@@ -1,16 +1,18 @@
-
 class ProxyType:
     SOCKS4 = 1
     SOCKS5 = 2
     HTTP = 3
 
+
 class HomeTimelineTypes:
     FOR_YOU = "HomeTimeline"
     FOLLOWING = "HomeLatestTimeline"
 
+
 class InboxPageTypes:
     TRUSTED = "trusted"
     UNTRUSTED = "untrusted"
+
 
 class MediaTypes:
     VIDEO = "video"
@@ -22,15 +24,21 @@ class InboxCallType:
     AUDIO = "AUDIO_ONLY"
     VIDEO = "AUDIO_AND_VIDEO"
 
+
 class UploadTypes:
     TWEET_IMAGE = "tweet_image"
     DM_IMAGE = "dm_image"
     BANNER_IMAGE = "banner_image"
 
-REQUEST_USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36'
+
+REQUEST_USER_AGENT = (
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36"
+)
 REQUEST_USER_AGENT_CH = '"Not)A;Brand";v="8", "Chromium";v="138", "Google Chrome";v="138"'
-REQUEST_PLATFORMS = ['Linux']
-DEFAULT_BEARER_TOKEN = 'Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA'
+REQUEST_PLATFORMS = ["Linux"]
+DEFAULT_BEARER_TOKEN = (
+    "Bearer AAAAAAAAAAAAAAAAAAAAANRILgAAAAAAnNwIzUejRCOuH5E6I8xnZz4puTs%3D1Zv7ttfk8LF81IUq16cHjhLTvJu4FA33AGWWjCpTnA"
+)
 AUTH_ACTION_REQUIRED_KEYS = ("LoginTwoFactorAuthChallenge", "LoginAcid", "LoginEnterAlternateIdentifierSubtask")
 LIKES_ARE_PRIVATE_NOW_WARNING = "User Likes are now private , you can only see the Likes of authenticated User"
 
@@ -54,7 +62,7 @@ TLS_OPTIONS = {
         "rsa_pss_rsae_sha384",
         "rsa_pkcs1_sha384",
         "rsa_pss_rsae_sha512",
-        "rsa_pkcs1_sha512"
+        "rsa_pkcs1_sha512",
     ],
     "tls_cert_compression": "brotli",
     "tls_grease": True,

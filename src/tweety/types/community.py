@@ -4,9 +4,7 @@ from .twDataTypes import Community, Excel, SelfThread, Tweet, User
 
 
 class UserCommunities(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "community": Community
-    }
+    OBJECTS_TYPES = {"community": Community}
     _RESULT_ATTR = "communities"
 
     def __init__(self, client, user_id):
@@ -47,11 +45,7 @@ class UserCommunities(BaseGeneratorClass):
 
 
 class CommunityTweets(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": SelfThread}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, community_id, client, pages=1, filter_=None, wait_time=2, cursor=None):
@@ -67,7 +61,7 @@ class CommunityTweets(BaseGeneratorClass):
         self.wait_time = wait_time
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):

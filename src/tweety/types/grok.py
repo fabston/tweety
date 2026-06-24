@@ -47,18 +47,11 @@ class GrokConversation(BaseGeneratorClass):
 
             responses.append(this_response)
 
-        responses.append({
-            "message": prompt_text,
-            "sender": 1
-        })
+        responses.append({"message": prompt_text, "sender": 1})
 
         response = await self.client.http.get_new_grok_response(self.id, responses)
 
-        grok_message_object = {
-            "grok_mode": "Normal",
-            "sender_type": "Agent",
-            "file_attachments": []
-        }
+        grok_message_object = {"grok_mode": "Normal", "sender_type": "Agent", "file_attachments": []}
 
         message = ""
         lines = [i for i in response.content.split(b"\n") if i]
@@ -81,7 +74,3 @@ class GrokConversation(BaseGeneratorClass):
         grok_message_object_parsed = GrokMessage(self.client, grok_message_object)
         self.messages.append(grok_message_object_parsed)
         return grok_message_object_parsed
-
-
-
-

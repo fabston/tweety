@@ -39,6 +39,3 @@ class TopicTweets(BaseGeneratorClass):
 
     def __repr__(self):
         return f"TopicTweets(topic={self.topic}, tweets={len(self.tweets)})"
-
-
-

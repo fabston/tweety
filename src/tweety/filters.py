@@ -1,10 +1,10 @@
-
 class _CallableString(str):
     """
 
     For backward compatibility where user can still call the attributes as method
 
     """
+
     def __init__(self, __value__):
         super().__init__()
 
@@ -16,15 +16,18 @@ class SearchFilters:
     """
     This class can be used to filter the search results
     """
+
     Users = _CallableString("People")
     Latest = _CallableString("Latest")
     Media = _CallableString("Media")
     Lists = _CallableString("Lists")
 
+
 class TweetCommentFilters:
     Likes = _CallableString("Likes")
     Latest = _CallableString("Recency")
     Relevant = Relevancy = _CallableString("Relevance")
+
 
 class TweetConversationFilters:
     """

@@ -17,7 +17,7 @@ class Places(dict):
         _results = []
         response = await self.client.http.search_place(self.lat, self.long, self.search_term)
 
-        for place in response.get('places', []):
+        for place in response.get("places", []):
             _results.append(Place(self.client, place))
 
         self.results = _results
@@ -37,6 +37,3 @@ class Places(dict):
 
     def __len__(self):
         return len(self.results)
-
-
-

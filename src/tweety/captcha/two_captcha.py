@@ -13,18 +13,9 @@ class TwoCaptcha(BaseCaptchaSolver):
         super().init(cookies=twitter_client.session.cookies_dict, proxy=twitter_client._proxy)
         return self
 
-    def get_solved_token(
-            self,
-            websitePublicKey,
-            websiteUrl,
-            blob_data=None
-    ) -> str:
+    def get_solved_token(self, websitePublicKey, websiteUrl, blob_data=None) -> str:
         solver = TwoCaptchaSolver(self._api_key)
-        request = dict(
-            sitekey=websitePublicKey,
-            url=websiteUrl,
-            data=blob_data
-        )
+        request = dict(sitekey=websitePublicKey, url=websiteUrl, data=blob_data)
 
         if self._proxy is not None:
             this_proxy = unpack_proxy(self._proxy)

@@ -1,4 +1,3 @@
-
 from ..exceptions import UserNotFound, UserProtected
 from ..filters import TweetCommentFilters
 from .base import BaseGeneratorClass, find_objects
@@ -6,11 +5,7 @@ from .twDataTypes import ConversationThread, Excel, ScheduledTweet, SelfThread, 
 
 
 class UserTweets(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": SelfThread}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
@@ -27,7 +22,7 @@ class UserTweets(BaseGeneratorClass):
         self.pinned = None
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     def _get_pinned_tweet(self, response):
@@ -40,10 +35,10 @@ class UserTweets(BaseGeneratorClass):
 
         response = await self.client.http.get_tweets(self.user_id, replies=self.get_replies, cursor=cursor)
 
-        if not response['data']['user'].get("result"):
+        if not response["data"]["user"].get("result"):
             raise UserNotFound(response=response)
 
-        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+        if response["data"]["user"]["result"]["__typename"] == "UserUnavailable":
             raise UserProtected(403, "UserUnavailable", response)
 
         entries = self._get_entries(response)
@@ -74,11 +69,7 @@ class UserTweets(BaseGeneratorClass):
 
 
 class UserHighlights(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": SelfThread}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
@@ -95,7 +86,7 @@ class UserHighlights(BaseGeneratorClass):
         self.pinned = None
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):
@@ -103,10 +94,10 @@ class UserHighlights(BaseGeneratorClass):
 
         response = await self.client.http.get_highlights(self.user_id, cursor=cursor)
 
-        if not response['data']['user'].get("result"):
+        if not response["data"]["user"].get("result"):
             raise UserNotFound(response=response)
 
-        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+        if response["data"]["user"]["result"]["__typename"] == "UserUnavailable":
             raise UserProtected(403, "UserUnavailable", response)
 
         entries = self._get_entries(response)
@@ -134,11 +125,7 @@ class UserHighlights(BaseGeneratorClass):
 
 
 class UserLikes(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": SelfThread}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, get_replies: bool = True, wait_time=2, cursor=None):
@@ -155,7 +142,7 @@ class UserLikes(BaseGeneratorClass):
         self.pinned = None
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):
@@ -163,10 +150,10 @@ class UserLikes(BaseGeneratorClass):
 
         response = await self.client.http.get_likes(self.user_id, cursor=cursor)
 
-        if not response['data']['user'].get("result"):
+        if not response["data"]["user"].get("result"):
             raise UserNotFound(response=response)
 
-        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+        if response["data"]["user"]["result"]["__typename"] == "UserUnavailable":
             raise UserProtected(403, "UserUnavailable", response)
 
         entries = self._get_entries(response)
@@ -194,11 +181,7 @@ class UserLikes(BaseGeneratorClass):
 
 
 class UserMedia(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": Tweet
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": Tweet}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, pages=1, wait_time=2, cursor=None):
@@ -217,17 +200,17 @@ class UserMedia(BaseGeneratorClass):
         return "tweets"
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):
         _tweets = []
 
         response = await self.client.http.get_medias(self.user_id, cursor=cursor)
-        if not response['data']['user'].get("result"):
+        if not response["data"]["user"].get("result"):
             raise UserNotFound(response=response)
 
-        if response['data']['user']['result']['__typename'] == "UserUnavailable":
+        if response["data"]["user"]["result"]["__typename"] == "UserUnavailable":
             raise UserProtected(403, "UserUnavailable", response)
 
         entries = find_objects(response, "tweetDisplayType", "MediaGrid", none_value=[])
@@ -252,11 +235,7 @@ class UserMedia(BaseGeneratorClass):
 
 
 class SelfTimeline(BaseGeneratorClass):
-    OBJECTS_TYPES = {
-        "tweet": Tweet,
-        "homeConversation": SelfThread,
-        "profile": SelfThread
-    }
+    OBJECTS_TYPES = {"tweet": Tweet, "homeConversation": SelfThread, "profile": SelfThread}
     _RESULT_ATTR = "tweets"
 
     def __init__(self, user_id, client, timeline_type, pages=1, wait_time=2, cursor=None):
@@ -271,12 +250,12 @@ class SelfTimeline(BaseGeneratorClass):
         self.wait_time = wait_time
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def get_page(self, cursor):
         _tweets = []
-        response = await self.client.http.get_home_timeline(timeline_type=self.timeline_type,cursor=cursor)
+        response = await self.client.http.get_home_timeline(timeline_type=self.timeline_type, cursor=cursor)
 
         entries = self._get_entries(response)
 
@@ -306,7 +285,16 @@ class TweetComments(BaseGeneratorClass):
     }
     _RESULT_ATTR = "tweets"
 
-    def __init__(self, tweet_id, client, get_hidden=False, filter_=TweetCommentFilters.Relevant, pages=1, wait_time=2, cursor=None):
+    def __init__(
+        self,
+        tweet_id,
+        client,
+        get_hidden=False,
+        filter_=TweetCommentFilters.Relevant,
+        pages=1,
+        wait_time=2,
+        cursor=None,
+    ):
         super().__init__()
         self.tweets = []
         self.cursor = cursor
@@ -315,13 +303,13 @@ class TweetComments(BaseGeneratorClass):
         self.client = client
         self.tweet_id = tweet_id
         self.pages = pages
-        self.filter= filter_
+        self.filter = filter_
         self.wait_time = wait_time
         self.parent = None
         self.ignore_empty_list = False
 
     def _get_target_object(self, tweet):
-        entry_type = str(tweet['entryId']).split("-")[0]
+        entry_type = str(tweet["entryId"]).split("-")[0]
         return self.OBJECTS_TYPES.get(entry_type)
 
     async def _get_parent(self):
@@ -348,8 +336,7 @@ class TweetComments(BaseGeneratorClass):
                     entry = [entry]
                     object_type = ConversationThread
                 else:
-                    entry = [i for i in entry.get('content', {}).get('items', [])]
-
+                    entry = [i for i in entry.get("content", {}).get("items", [])]
 
                 if len(entry) > 0:
                     parsed = object_type(self.client, self.parent, entry)
@@ -359,7 +346,9 @@ class TweetComments(BaseGeneratorClass):
 
         cursor = self._get_cursor_(response)
         cursor_top = self._get_cursor_(response, "Top")
-        cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt") or self._get_cursor_(response, "ShowMoreThreads")
+        cursor_spam = self._get_cursor_(response, "ShowMoreThreadsPrompt") or self._get_cursor_(
+            response, "ShowMoreThreads"
+        )
         if cursor_spam:
             cursor = cursor_spam
 
@@ -383,17 +372,17 @@ class TweetHistory(BaseGeneratorClass):
         results = []
         response = await self.client.http.get_tweet_edit_history(self._tweet_id)
         entries = find_objects(response, "type", "TimelineAddEntries", recursive=False, none_value={})
-        entries = entries.get('entries', [])
+        entries = entries.get("entries", [])
         if not entries:
             _tweet = self.client.tweet_detail(self._tweet_id)
-            self.latest = self['latest'] = _tweet
+            self.latest = self["latest"] = _tweet
             results.append(_tweet)
         else:
             for entry in entries:
                 _tweet = Tweet(self.client, entry, None)
 
-                if entry['entryId'] == self.LATEST_TWEET_ENTRY_ID:
-                    self.latest = self['latest'] = _tweet
+                if entry["entryId"] == self.LATEST_TWEET_ENTRY_ID:
+                    self.latest = self["latest"] = _tweet
 
                 results.append(_tweet)
         self.tweets = self["tweets"] = results
@@ -450,4 +439,3 @@ class ScheduledTweets(dict):
 
     def __repr__(self):
         return f"ScheduledTweets(tweets={len(self.tweets)})"
-

@@ -52,11 +52,11 @@ class BotMethods:
     LOGIN_URL = "https://api.x.com/1.1/onboarding/task.json?flow_name=login"
 
     def __init__(
-            self,
-            session_name: Union[str, Session],
-            proxy: Union[httpxProxy, Proxy, str] = None,
-            captcha_solver: Type[BaseCaptchaSolver] = None,
-            **httpx_kwargs
+        self,
+        session_name: Union[str, Session],
+        proxy: Union[httpxProxy, Proxy, str] = None,
+        captcha_solver: Type[BaseCaptchaSolver] = None,
+        **httpx_kwargs,
     ):
         """
         Constructor of the Twitter Public class
@@ -99,7 +99,9 @@ class BotMethods:
         self.cookies = None
         self.logged_in = False
         self.is_user_authorized = False
-        self.request = self.http = Request(self, max_retries=10, proxy=self._proxy, captcha_solver=captcha_solver, **httpx_kwargs)
+        self.request = self.http = Request(
+            self, max_retries=10, proxy=self._proxy, captcha_solver=captcha_solver, **httpx_kwargs
+        )
         self.user = None
 
     async def get_user_info(self, username: Union[str, int, list] = None) -> "User":
@@ -193,12 +195,12 @@ class BotMethods:
         return user_id
 
     async def get_tweets(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> UserTweets:
         """
          Get the tweets from a user
@@ -217,14 +219,13 @@ class BotMethods:
         return await async_list(userTweets)
 
     async def iter_tweets(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the tweets from a user
 
@@ -245,12 +246,12 @@ class BotMethods:
             yield result_tuple
 
     async def get_user_highlights(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> "UserHighlights":
         """
          Get the tweets from a user
@@ -271,14 +272,13 @@ class BotMethods:
         return await async_list(userHighlights)
 
     async def iter_user_highlights(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the tweets from a user
 
@@ -299,12 +299,12 @@ class BotMethods:
             yield result_tuple
 
     async def get_user_likes(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> "UserLikes":
         """
          Get the liked tweets of a user
@@ -327,14 +327,13 @@ class BotMethods:
         return await async_list(userLikes)
 
     async def iter_user_likes(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            replies: bool = False,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        replies: bool = False,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the liked tweets of a user
 
@@ -358,11 +357,11 @@ class BotMethods:
 
     @AuthRequired
     async def get_user_media(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> UserMedia:
         """
          Get the media from a user
@@ -383,13 +382,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_user_media(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the media from a user
 
@@ -422,23 +420,22 @@ class BotMethods:
         if not entries or len(entries) == 0:
             return trends
 
-        for entry in entries['entries']:
-            if str(entry['entryId']) == "trends":
-                for item in entry['content']['timelineModule']['items']:
+        for entry in entries["entries"]:
+            if str(entry["entryId"]) == "trends":
+                for item in entry["content"]["timelineModule"]["items"]:
                     trends.append(Trends(self, item))
 
         return trends
 
     @AuthRequired
     async def search(
-            self,
-            keyword: str,
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        keyword: str,
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> Search:
-
         """
         Search for a keyword or hashtag on Twitter
 
@@ -458,12 +455,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_search(
-            self,
-            keyword: str,
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        keyword: str,
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
         """
         Search for a keyword or hashtag on Twitter
@@ -536,14 +533,13 @@ class BotMethods:
 
     @AuthRequired
     async def iter_community_tweets(
-            self,
-            community_id: Union[str, int, Community],
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        community_id: Union[str, int, Community],
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the tweets from a community
 
@@ -566,14 +562,13 @@ class BotMethods:
 
     @AuthRequired
     async def get_community_tweets(
-            self,
-            community_id: Union[str, int, Community],
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        community_id: Union[str, int, Community],
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> "CommunityTweets":
-
         """
          Getting the tweets from a community
 
@@ -595,12 +590,12 @@ class BotMethods:
 
     @AuthRequired
     async def get_community_members(
-            self,
-            community_id: Union[str, int, Community],
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        community_id: Union[str, int, Community],
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> "CommunityMembers":
         """
          Getting the Members from a community
@@ -623,12 +618,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_community_members(
-            self,
-            community_id: Union[str, int, Community],
-            pages: int = 1,
-            filter_: str = None,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        community_id: Union[str, int, Community],
+        pages: int = 1,
+        filter_: str = None,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
         """
          Getting the Members from a community
@@ -652,11 +647,11 @@ class BotMethods:
 
     @AuthRequired
     async def get_user_followers(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> UserFollowers:
         """
          Get the followers of a user
@@ -677,13 +672,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_user_followers(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the followers from a user
 
@@ -704,11 +698,11 @@ class BotMethods:
 
     @AuthRequired
     async def get_user_followings(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> UserFollowings:
         """
          Get the Followings of a user
@@ -729,13 +723,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_user_followings(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the followings from a user
 
@@ -756,11 +749,11 @@ class BotMethods:
 
     @AuthRequired
     async def get_user_subscribers(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ) -> UserSubscribers:
         """
          Get the Subscribers of a user
@@ -781,13 +774,12 @@ class BotMethods:
 
     @AuthRequired
     async def iter_user_subscribers(
-            self,
-            username: Union[str, int, User],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None
+        self,
+        username: Union[str, int, User],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
     ):
-
         """
          Generator for getting the Subscribers from a user
 
@@ -808,13 +800,13 @@ class BotMethods:
 
     @AuthRequired
     async def get_tweet_comments(
-            self,
-            tweet_id: Union[int, str, Tweet],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None,
-            get_hidden: bool = False,
-            filter_: str = TweetCommentFilters.Relevant
+        self,
+        tweet_id: Union[int, str, Tweet],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
+        get_hidden: bool = False,
+        filter_: str = TweetCommentFilters.Relevant,
     ) -> "TweetComments":
         """
 
@@ -834,13 +826,13 @@ class BotMethods:
 
     @AuthRequired
     async def iter_tweet_comments(
-            self,
-            tweet_id: Union[str, Tweet],
-            pages: int = 1,
-            wait_time: Union[int, list, tuple] = 2,
-            cursor: str = None,
-            get_hidden: bool = False,
-            filter_: str = TweetCommentFilters.Relevant
+        self,
+        tweet_id: Union[str, Tweet],
+        pages: int = 1,
+        wait_time: Union[int, list, tuple] = 2,
+        cursor: str = None,
+        get_hidden: bool = False,
+        filter_: str = TweetCommentFilters.Relevant,
     ):
         """
 
@@ -899,11 +891,11 @@ class BotMethods:
             if not entries or len(entries) == 0:
                 raise InvalidTweetIdentifier(response=response)
 
-            for entry in entries['entries']:
-                if str(entry['entryId']).split("-")[0] == "tweet":
+            for entry in entries["entries"]:
+                if str(entry["entryId"]).split("-")[0] == "tweet":
                     # ignore these protected tweets that are not what we are looking for
                     # otherwise it will throw exception
-                    if not (is_tweet_protected(entry) and str(entry['entryId'].split("-")[1]) != str(tweetId)):
+                    if not (is_tweet_protected(entry) and str(entry["entryId"].split("-")[1]) != str(tweetId)):
                         tweet = Tweet(self, entry, response)
 
                         if str(tweet.id) == str(tweetId):
@@ -916,11 +908,11 @@ class BotMethods:
 
     async def translate_tweet(self, tweet_id: Union[str, int, Tweet], language: str):
         """
-            Translate Tweet in another Language
+        Translate Tweet in another Language
 
-            :param tweet_id: Tweet ID of the Tweet to be translated
-            :param language: In which Language you want to translate the Tweet (see tweety.filters.Language)
-            :return: .types.twDataTypes.TweetTranslate
+        :param tweet_id: Tweet ID of the Tweet to be translated
+        :param language: In which Language you want to translate the Tweet (see tweety.filters.Language)
+        :return: .types.twDataTypes.TweetTranslate
         """
 
         tweetId = get_tweet_id(tweet_id)

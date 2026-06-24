@@ -21,8 +21,8 @@ class TweetLikes(BaseGeneratorClass):
 
     @staticmethod
     def _get_tweet_content_key(response):
-        if str(response['entryId']).split("-")[0] == "user":
-            return [response['content']['itemContent']['user_results']['result']]
+        if str(response["entryId"]).split("-")[0] == "user":
+            return [response["content"]["itemContent"]["user_results"]["result"]]
 
         return []
 

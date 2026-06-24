@@ -5,7 +5,6 @@ from .utils import get_running_loop
 
 
 class UpdateMethods:
-
     def on(self, event):
         def decorator(f):
             self.add_event_handler(f, event)
@@ -37,7 +36,3 @@ class UpdateMethods:
             return get_running_loop().run_until_complete(self._run_until_disconnected())
         except KeyboardInterrupt:
             raise asyncio.CancelledError
-
-
-
-

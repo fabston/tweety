@@ -1,3 +1,2 @@
 class BaseUpdateMethod:
     pass
-

@@ -19,20 +19,17 @@ class GifSearch(BaseGeneratorClass):
         _gifs = []
         response = await self.client.http.gif_search(self.term, cursor)
 
-        if not response.get('data'):
+        if not response.get("data"):
             return _gifs
 
-        items = response.get('data', {}).get('items', [])
+        items = response.get("data", {}).get("items", [])
         for item in items:
             _gifs.append(Gif(self.client, item))
 
-        cursor = response.get('cursor', {}).get('next')
+        cursor = response.get("cursor", {}).get("next")
         cursor_top = self._get_cursor_(response, "Top")
 
         return _gifs, cursor, cursor_top
 
     def __repr__(self):
         return f"GifSearch(count={self.__len__()})"
-
-
-

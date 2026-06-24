@@ -43,7 +43,6 @@ class Session:
 
 
 class MemorySession(Session):
-
     def __init__(self):
         super().__init__(None)
 
@@ -85,8 +84,7 @@ class FileSession(Session):
         if os.path.exists(self.session_file_path):
             with open(self.session_file_path) as f:
                 session_data = json.load(f)
-                self.cookies = session_data['cookies']
-                self.user = session_data.get('user', {})
+                self.cookies = session_data["cookies"]
+                self.user = session_data.get("user", {})
 
             self.logged_in = True
-

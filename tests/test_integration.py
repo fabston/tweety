@@ -79,7 +79,4 @@ async def test_create_and_delete_tweet(live_app):
         deleted = await live_app.delete_tweet(posted.id)
         assert deleted is True, f"Failed to delete tweet {posted.id}"
     except Exception:
-        pytest.fail(
-            f"Posted tweet {posted.id} with marker '{marker}' — deletion failed, "
-            f"please delete it manually."
-        )
+        pytest.fail(f"Posted tweet {posted.id} with marker '{marker}' — deletion failed, please delete it manually.")

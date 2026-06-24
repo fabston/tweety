@@ -27,12 +27,11 @@ async def test_respx_intercepts_post_with_body():
     import httpx
 
     with respx.mock as router:
-        route = router.post("https://example.test/echo").respond(
-            200, json={"received": True}
-        )
+        route = router.post("https://example.test/echo").respond(200, json={"received": True})
         async with httpx.AsyncClient() as client:
             r = await client.post("https://example.test/echo", json={"a": 1})
         assert r.status_code == 200
         assert route.called
         import json as _json
+
         assert _json.loads(route.calls.last.request.read()) == {"a": 1}

@@ -293,7 +293,10 @@ class TransactionGenerator:
     def get_2d_array(self, key_bytes: List[Union[float, int]], response, frames: bs4.ResultSet = None):
         if not frames:
             frames = self.get_frames(response)
-        return [[int(x) for x in re.sub(r"[^\d]+", " ", item).strip().split()] for item in list(list(frames[key_bytes[5] % 4].children)[0].children)[1].get("d")[9:].split("C")]
+        return [
+            [int(x) for x in re.sub(r"[^\d]+", " ", item).strip().split()]
+            for item in list(list(frames[key_bytes[5] % 4].children)[0].children)[1].get("d")[9:].split("C")
+        ]
 
     def solve(self, value, min_val, max_val, rounding: bool):
         result = value * (max_val - min_val) / 255 + min_val
@@ -326,7 +329,9 @@ class TransactionGenerator:
     def get_animation_key(self, key_bytes, response):
         total_time = 4096
         row_index = key_bytes[self.DEFAULT_ROW_INDEX] % 16
-        frame_time = reduce(lambda num1, num2: num1 * num2, [key_bytes[index] % 16 for index in self.DEFAULT_KEY_BYTES_INDICES])
+        frame_time = reduce(
+            lambda num1, num2: num1 * num2, [key_bytes[index] % 16 for index in self.DEFAULT_KEY_BYTES_INDICES]
+        )
         arr = self.get_2d_array(key_bytes, response)
         frame_row = arr[row_index]
 
@@ -334,14 +339,18 @@ class TransactionGenerator:
         animation_key = self.animate(frame_row, target_time)
         return animation_key
 
-    def generate_transaction_id(self, method: str, path: str, response=None, key=None, animation_key=None, time_now=None):
+    def generate_transaction_id(
+        self, method: str, path: str, response=None, key=None, animation_key=None, time_now=None
+    ):
         try:
             time_now = time_now or math.floor((time.time() * 1000 - 1682924400 * 1000) / 1000)
             time_now_bytes = [(time_now >> (i * 8)) & 0xFF for i in range(4)]
             key = key or self.key or self.get_key(response)
             key_bytes = self.get_key_bytes(key)
             animation_key = animation_key or self.animation_key or self.get_animation_key(key_bytes, response)
-            hash_val = hashlib.sha256(f"{method}!{path}!{time_now}{self.DEFAULT_KEYWORD}{animation_key}".encode()).digest()
+            hash_val = hashlib.sha256(
+                f"{method}!{path}!{time_now}{self.DEFAULT_KEYWORD}{animation_key}".encode()
+            ).digest()
             hash_bytes = list(hash_val)
             random_num = random.randint(0, 255)
             bytes_arr = [*key_bytes, *time_now_bytes, *hash_bytes[:16], self.ADDITIONAL_RANDOM_NUMBER]

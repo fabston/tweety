@@ -23,31 +23,58 @@ from .exceptions import AuthenticationRequired
 from .filters import Language
 
 GUEST_TOKEN_REGEX = re.compile("gt=(.*?);")
-MIGRATION_REGEX = re.compile(r"""(http(?:s)?://(?:www\.)?(twitter|x){1}\.com(/x)?/migrate([/?])?tok=[a-zA-Z0-9%\-_]+)+""", re.VERBOSE)
+MIGRATION_REGEX = re.compile(
+    r"""(http(?:s)?://(?:www\.)?(twitter|x){1}\.com(/x)?/migrate([/?])?tok=[a-zA-Z0-9%\-_]+)+""", re.VERBOSE
+)
 MIME_TYPES = {
     "png": ("image/png", [b"\x89PNG\r\n\x1a\n"]),
-    "jpg": ("image/jpeg", [b"\xFF\xD8\xFF"]),
-    "jpeg": ("image/jpeg", [b"\xFF\xD8\xFF"]),
-    "jfif": ("image/jpeg", [b"\xFF\xD8\xFF\xE0", b"\xFF\xD8\xFF\xE1"]),
+    "jpg": ("image/jpeg", [b"\xff\xd8\xff"]),
+    "jpeg": ("image/jpeg", [b"\xff\xd8\xff"]),
+    "jfif": ("image/jpeg", [b"\xff\xd8\xff\xe0", b"\xff\xd8\xff\xe1"]),
     "gif": ("image/gif", [b"GIF87a", b"GIF89a"]),
     "webp": ("image/webp", [b"RIFF"]),
-    "mp4": ("video/mp4", [b"\x00\x00\x00\x18ftypisom", b"\x00\x00\x00\x18ftypmp42",
-                          b"\x00\x00\x00\x18ftypisom", b"\x00\x00\x00\x18ftypMSNV",
-                          b"\x00\x00\x00\x18ftypmp41"]),
+    "mp4": (
+        "video/mp4",
+        [
+            b"\x00\x00\x00\x18ftypisom",
+            b"\x00\x00\x00\x18ftypmp42",
+            b"\x00\x00\x00\x18ftypisom",
+            b"\x00\x00\x00\x18ftypMSNV",
+            b"\x00\x00\x00\x18ftypmp41",
+        ],
+    ),
     "mov": ("video/quicktime", [b"\x00\x00\x00\x14ftypqt"]),
-    "m4v": ("video/x-m4v", [b"\x00\x00\x00\x18ftypM4V", b"\x00\x00\x00\x20ftypM4V"])
+    "m4v": ("video/x-m4v", [b"\x00\x00\x00\x18ftypM4V", b"\x00\x00\x00\x20ftypM4V"]),
 }
 
-WORKBOOK_HEADERS = ['Date', 'Author', 'id', 'text', 'is_retweet', 'is_reply', 'language', 'likes',
-                    'retweet_count', 'source', 'medias', 'user_mentioned', 'urls', 'hashtags', 'symbols']
+WORKBOOK_HEADERS = [
+    "Date",
+    "Author",
+    "id",
+    "text",
+    "is_retweet",
+    "is_reply",
+    "language",
+    "likes",
+    "retweet_count",
+    "source",
+    "medias",
+    "user_mentioned",
+    "urls",
+    "hashtags",
+    "symbols",
+]
 
-SENSITIVE_MEDIA_TAGS = ['adult_content', 'graphic_violence', 'other']
+SENSITIVE_MEDIA_TAGS = ["adult_content", "graphic_violence", "other"]
+
+
 def Warn(text, category=DeprecationWarning):
     this_text = text
     this_category = category
 
     def decorator(method):
         if inspect.iscoroutinefunction(method):
+
             @wraps(method)
             async def async_wrapper(self, *args, **kwargs):
                 warnings.warn(message=this_text, category=this_category)
@@ -55,13 +82,16 @@ def Warn(text, category=DeprecationWarning):
 
             return async_wrapper
         else:
+
             @wraps(method)
             def sync_wrapper(self, *args, **kwargs):
                 warnings.warn(message=this_text, category=this_category)
                 return method(self, *args, **kwargs)
 
             return sync_wrapper
+
     return decorator
+
 
 def DictRequestData(cls):
 
@@ -94,6 +124,7 @@ def AuthRequired(cls):
                 raise AuthenticationRequired(200, "GenericForbidden", None)
 
             return await func(self, *args, **kwargs)
+
         return wrapper
 
     def method_wrapper_decorator(func):
@@ -102,6 +133,7 @@ def AuthRequired(cls):
                 raise AuthenticationRequired(200, "GenericForbidden", None)
 
             return func(self, *args, **kwargs)
+
         return wrapper
 
     if inspect.isclass(cls):
@@ -117,20 +149,20 @@ def AuthRequired(cls):
         return method_wrapper_decorator(cls)
     return method_async_wrapper_decorator(cls)
 
+
 def mime_from_buffer(file_buffer_or_bytes):
     try:
         import magic
+
         mime_detector = magic.Magic(mime=True)
         return mime_detector.from_buffer(file_buffer_or_bytes)
     except ImportError:
         for file_type, (mime_type, this_file_headers) in MIME_TYPES.items():
             for header in this_file_headers:
                 if file_buffer_or_bytes.startswith(header):
-                  return mime_type
-
+                    return mime_type
 
     return None
-
 
 
 def get_running_loop():
@@ -169,9 +201,9 @@ def float_to_hex(x):
         x = float(quotient)
 
     if fraction == 0:
-        return ''.join(result)
+        return "".join(result)
 
-    result.append('.')
+    result.append(".")
 
     while fraction > 0:
         fraction *= 16
@@ -183,7 +215,7 @@ def float_to_hex(x):
         else:
             result.append(str(integer))
 
-    return ''.join(result)
+    return "".join(result)
 
 
 def is_odd(num: Union[int, float]):
@@ -201,7 +233,7 @@ def base64_decode(this_input):
     try:
         data = base64.b64decode(this_input)
         return data.decode()
-    except Exception: # noqa
+    except Exception:  # noqa
         return list(bytes(this_input, "utf-8"))
 
 
@@ -225,7 +257,6 @@ def parse_wait_time(wait_time):
         return 0
 
     if isinstance(wait_time, (tuple, list)):
-
         if len(wait_time) == 1:
             return int(wait_time[0])
 
@@ -252,6 +283,7 @@ def custom_json(self, **kwargs):
 
 def create_request_id():
     return str(uuid.uuid1())
+
 
 def create_conversation_id(sender, receiver):
     sender = int(sender)
@@ -292,7 +324,7 @@ def check_if_file_is_supported(file):
 
 
 def get_random_string(length):
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=int(length)))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=int(length)))
 
 
 def calculate_md5(file_path):
@@ -313,10 +345,7 @@ def create_media_entities(files):
     entities = []
     for file in files:
         media_id = file.media_id if hasattr(file, "media_id") else file
-        entities.append({
-            "media_id": media_id,
-            "tagged_users": []
-        })
+        entities.append({"media_id": media_id, "tagged_users": []})
 
     return entities
 
@@ -366,7 +395,7 @@ def create_pool(duration: int, *choices):
     data = {
         "twitter:long:duration_minutes": duration,
         "twitter:api:api:endpoint": "1",
-        "twitter:card": f"poll{len(choices)}choice_text_only"
+        "twitter:card": f"poll{len(choices)}choice_text_only",
     }
 
     for index, choice in enumerate(choices, start=1):
@@ -458,7 +487,7 @@ def get_url_parts(url):
         "params": parsed_url.params,
         "query": query_params,
         "fragment": parsed_url.fragment,
-        "host": f"{parsed_url.scheme}://{parsed_url.netloc}"
+        "host": f"{parsed_url.scheme}://{parsed_url.netloc}",
     }
 
     return url_parts
@@ -482,13 +511,7 @@ def unpack_proxy(proxy_dict):
     if creds is not None:
         username, password = creds.split(":")
 
-    return {
-        "type": scheme,
-        "host": host,
-        "port": port,
-        "username": username,
-        "password": password
-    }
+    return {"type": scheme, "host": host, "port": port, "username": username, "password": password}
 
 
 def run_command(command):
@@ -497,7 +520,7 @@ def run_command(command):
             command = " ".join(command)
 
         result = subprocess.run(command, shell=True, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        return result.stdout.decode('utf-8')
+        return result.stdout.decode("utf-8")
     except subprocess.CalledProcessError as e:
         raise Exception(f"Command '{command}' failed with error: {e.stderr.decode('utf-8')}")
 
@@ -519,8 +542,37 @@ def encode_audio_message(input_filename, ffmpeg_path=None):
     output_filename = f'"{input_filename}.mp4"'
 
     commands = [
-        [ffmpeg_path, "-y", "-i", _input_filename, "-c:a", "aac", "-b:a", "65k", "-ar", "44100", "-ac", "1", _output_aac_filename],
-        [ffmpeg_path, "-y", "-f", "lavfi", "-i", "color=c=black:s=854x480", "-i", _output_aac_filename, "-c:v", "libx264", "-c:a", "copy", "-shortest", output_filename]
+        [
+            ffmpeg_path,
+            "-y",
+            "-i",
+            _input_filename,
+            "-c:a",
+            "aac",
+            "-b:a",
+            "65k",
+            "-ar",
+            "44100",
+            "-ac",
+            "1",
+            _output_aac_filename,
+        ],
+        [
+            ffmpeg_path,
+            "-y",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=c=black:s=854x480",
+            "-i",
+            _output_aac_filename,
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "copy",
+            "-shortest",
+            output_filename,
+        ],
     ]
 
     for command in commands:
@@ -538,26 +590,28 @@ def encode_audio_message(input_filename, ffmpeg_path=None):
 def tweet_id_to_datetime(tweet_id: int):
     return datetime.datetime.fromtimestamp(((tweet_id >> 22) + 1288834974657) / 1000.0)
 
+
 def json_stringify(json_data):
     return str(json.dumps(json_data, separators=(",", ":")))
 
+
 def create_search_query(
-        search_term=None,
-        from_users=None,
-        to_users=None,
-        mentioning_these_users=None,
-        exact_word=None,
-        none_of_these_words=None,
-        language=None,
-        include_replies=True,
-        only_replies=False,
-        include_links=True,
-        only_links=False,
-        minimum_replies=None,
-        minimum_likes=None,
-        minimum_reposts=None,
-        from_date=None,
-        to_date=None
+    search_term=None,
+    from_users=None,
+    to_users=None,
+    mentioning_these_users=None,
+    exact_word=None,
+    none_of_these_words=None,
+    language=None,
+    include_replies=True,
+    only_replies=False,
+    include_links=True,
+    only_links=False,
+    minimum_replies=None,
+    minimum_likes=None,
+    minimum_reposts=None,
+    from_date=None,
+    to_date=None,
 ):
     date_format = "%Y-%m-%d"
     new_search_term = ""

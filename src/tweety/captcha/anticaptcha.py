@@ -17,12 +17,7 @@ class AntiCaptcha(BaseCaptchaSolver):
         super().init(cookies=twitter_client.session.cookies_dict, proxy=twitter_client._proxy)
         return self
 
-    def get_solved_token(
-            self,
-            websitePublicKey,
-            websiteUrl,
-            blob_data=None
-    ) -> str:
+    def get_solved_token(self, websitePublicKey, websiteUrl, blob_data=None) -> str:
         if self._proxy is None:
             solver = funcaptchaProxyless()
         else:
@@ -51,5 +46,6 @@ class AntiCaptcha(BaseCaptchaSolver):
         if token != 0:
             return token
 
-        raise CaptchaSolverFailed(message=f"Unable to Solve Captcha using 'AntiCaptcha' : [{solver.error_code}] {solver.err_string}")
-
+        raise CaptchaSolverFailed(
+            message=f"Unable to Solve Captcha using 'AntiCaptcha' : [{solver.error_code}] {solver.err_string}"
+        )

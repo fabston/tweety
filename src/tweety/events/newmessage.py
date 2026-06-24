@@ -8,10 +8,7 @@ from .base import BaseUpdateMethod
 
 class NewMessageUpdate(BaseUpdateMethod):
     def __init__(
-            self,
-            from_users: Union[str, List[str]] = None,
-            blacklist_users: Union[str, List[str]] = None,
-            func = None
+        self, from_users: Union[str, List[str]] = None, blacklist_users: Union[str, List[str]] = None, func=None
     ):
         self.from_users = from_users
         self.blacklist_users = blacklist_users

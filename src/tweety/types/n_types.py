@@ -52,7 +52,6 @@ class Proxy:
         return self.__proxy_url__()
 
 
-
 class GenericError:
     EXCEPTIONS = {
         32: InvalidCredentials,
@@ -66,7 +65,7 @@ class GenericError:
         326: LockedAccount,
         366: InvalidTweetIdentifier,
         399: InvalidCredentials,
-        477: RateLimitReached
+        477: RateLimitReached,
     }
 
     def __init__(self, response, error_code, message=None):
@@ -77,8 +76,8 @@ class GenericError:
         self._raise_exception()
 
     def _get_retry_after(self):
-        if all(key in self.response.headers for key in ['x-rate-limit-reset', 'x-rate-limit-remaining']):
-            epochLimitTime = int(self.response.headers['x-rate-limit-reset'])
+        if all(key in self.response.headers for key in ["x-rate-limit-reset", "x-rate-limit-remaining"]):
+            epochLimitTime = int(self.response.headers["x-rate-limit-reset"])
             epochCurrentTime = int(datetime.datetime.now().timestamp())
             return epochLimitTime - epochCurrentTime
 
@@ -91,14 +90,14 @@ class GenericError:
                 error_name=TWITTER_ERRORS[self.error_code],
                 response=self.response,
                 message=self.message,
-                retry_after=self.retry_after
+                retry_after=self.retry_after,
             )
 
         raise TwitterError(
             error_code=self.error_code,
             error_name=TWITTER_ERRORS.get(self.error_code, 0),
             response=self.response,
-            message=f"[{self.error_code}] {self.message}"
+            message=f"[{self.error_code}] {self.message}",
         )
 
 
@@ -125,7 +124,9 @@ class Cookies:
             elif isinstance(self._raw_cookies, dict):
                 true_cookies = self._raw_cookies
             else:
-                raise TypeError(f"cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {self._raw_cookies.__class__}")
+                raise TypeError(
+                    f"cookies should be of class 'str', 'dict' or 'MozillaCookieJar' not {self._raw_cookies.__class__}"
+                )
 
             for key, value in true_cookies.items():
                 setattr(self, key.strip(), value.strip())
@@ -133,7 +134,6 @@ class Cookies:
     def to_dict(self):
         result = {}
         for k, v in vars(self).items():
-
             if not k.startswith("_"):
                 result[k] = v
 
@@ -142,7 +142,6 @@ class Cookies:
     def __str__(self):
         string = ""
         for k, v in vars(self).items():
-
             if not k.startswith("_"):
                 string += f"{k}={v};"
 
@@ -153,12 +152,12 @@ class UploadedMedia:
     FILE_CHUNK_SIZE = 2 * 1024 * 1024  # 2 mb
 
     def __init__(
-            self,
-            file_path,
-            client,
-            alt_text=None,
-            sensitive_media_warning=None,
-            media_category=constants.UPLOAD_TYPE_TWEET_IMAGE
+        self,
+        file_path,
+        client,
+        alt_text=None,
+        sensitive_media_warning=None,
+        media_category=constants.UPLOAD_TYPE_TWEET_IMAGE,
     ):
         self.media_id = None
         self._file = file_path
@@ -214,11 +213,13 @@ class UploadedMedia:
 
     @staticmethod
     def _create_boundary():
-        return bytes(f'----WebKitFormBoundary{get_random_string(16)}', "utf-8")
+        return bytes(f"----WebKitFormBoundary{get_random_string(16)}", "utf-8")
 
     async def _initiate_upload(self):
-        response = await self._client.http.upload_media_init(self.size, self.mime_type, self._media_category, source_url=self._source_url)
-        media_id = response.get('media_id_string')
+        response = await self._client.http.upload_media_init(
+            self.size, self.mime_type, self._media_category, source_url=self._source_url
+        )
+        media_id = response.get("media_id_string")
 
         if not media_id:
             error = response["error"] if response.get("error") else response
@@ -249,10 +250,14 @@ class UploadedMedia:
             end = start + self.FILE_CHUNK_SIZE
             this_chunk = data_bytes[start:end]
             boundary = self._create_boundary()
-            _, multipart = encode_multipart_data({}, {"media": ('blob', this_chunk, "application/octet-stream")}, boundary)
+            _, multipart = encode_multipart_data(
+                {}, {"media": ("blob", this_chunk, "application/octet-stream")}, boundary
+            )
             headers = self.get_multipart_headers(multipart)
             headers.update({"x-media-type": self.mime_type})
-            await self._client.http.upload_media_append(media_id, b"".join([i for i in multipart.iter_chunks()]), headers, segment_index)
+            await self._client.http.upload_media_append(
+                media_id, b"".join([i for i in multipart.iter_chunks()]), headers, segment_index
+            )
 
     async def set_metadata(self):
         await self._client.http.set_media_set_metadata(self.media_id, self._alt_text, self._sensitive_media_warning)
@@ -265,28 +270,22 @@ class UploadedMedia:
 
         if response.get("error"):
             raise UploadFailed(
-                message=response.get("error", "Unknown Error Occurred while uploading File"),
-                response=response
+                message=response.get("error", "Unknown Error Occurred while uploading File"), response=response
             )
 
-        if not response.get('processing_info'):
+        if not response.get("processing_info"):
             return
 
         while True:
-            processing_info = response['processing_info']
+            processing_info = response["processing_info"]
 
-            if processing_info.get('state') in ('pending', 'in_progress') and 'error' not in processing_info:
-                time.sleep(processing_info['check_after_secs'])
+            if processing_info.get("state") in ("pending", "in_progress") and "error" not in processing_info:
+                time.sleep(processing_info["check_after_secs"])
                 response = await self._client.http.upload_media_status(self.media_id)
             elif processing_info.get("error"):
                 error = processing_info["error"]
                 code, name, message = error.get("code", 1), error.get("name", ""), error.get("message", "")
-                raise TwitterError(
-                    error_code=code,
-                    error_name=name,
-                    response=response,
-                    message=message
-                )
+                raise TwitterError(error_code=code, error_name=name, response=response, message=message)
             else:
                 return
 
@@ -308,8 +307,3 @@ class UploadedMedia:
 
     def __repr__(self):
         return f"UploadedMedia(media_id={self.media_id}, uploaded={True if self.media_id else False}, mime_type={self.mime_type}, size={self.size})"
-
-
-
-
-

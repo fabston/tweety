@@ -1,2 +1,1 @@
 from .newmessage import NewMessageUpdate
-

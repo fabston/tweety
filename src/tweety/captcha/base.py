@@ -58,7 +58,7 @@ class BaseCaptchaSolver:
             "Sec-Fetch-Site": "same-origin",
             "Pragma": "no-cache",
             "Cache-Control": "no-cache",
-            "TE": "trailers"
+            "TE": "trailers",
         }
 
     def __extract_tokens_from_access_html_page(self, html: str):
@@ -67,14 +67,11 @@ class BaseCaptchaSolver:
         if matches:
             authenticity_token = matches[0][0] if matches[0][0] else matches[0][1]
             assignment_token = matches[1][0] if matches[1][0] else matches[1][1]
-            self._tokens = {"authenticity_token": authenticity_token,
-                            "assignment_token": assignment_token}
+            self._tokens = {"authenticity_token": authenticity_token, "assignment_token": assignment_token}
 
     def __js_inst(self):
-        js_script = self.client.get(
-            url="https://x.com/i/js_inst?c_name=ui_metrics"
-        ).text
-        pattern = re.compile(r'return\s*({.*?});', re.DOTALL)
+        js_script = self.client.get(url="https://x.com/i/js_inst?c_name=ui_metrics").text
+        pattern = re.compile(r"return\s*({.*?});", re.DOTALL)
         js_instr = pattern.search(js_script)
 
         return js_instr.group(1)
@@ -100,7 +97,7 @@ class BaseCaptchaSolver:
             "assignment_token": tokens["assignment_token"],
             "lang": "en",
             "flow": "",
-            "ui_metrics": self.__js_inst()
+            "ui_metrics": self.__js_inst(),
         }
 
     @staticmethod
@@ -108,10 +105,10 @@ class BaseCaptchaSolver:
         return {
             "authenticity_token": tokens["authenticity_token"],
             "assignment_token": tokens["assignment_token"],
-            'lang': 'en',
-            'flow': '',
-            'verification_string': fun_captcha_token,
-            'language_code': 'en'
+            "lang": "en",
+            "flow": "",
+            "verification_string": fun_captcha_token,
+            "language_code": "en",
         }
 
     def __post_data_with_token(self, fun_captcha_token: str):
@@ -122,7 +119,9 @@ class BaseCaptchaSolver:
         data = self.__data_with_js_inst(tokens=self._tokens)
         self.__post_to_access_page(data=data)
 
-    def unlock(self, websitePublicKey="0152B4EB-D2DC-460A-89A1-629838B529C9", websiteUrl="https://twitter.com/", blob_data=None):
+    def unlock(
+        self, websitePublicKey="0152B4EB-D2DC-460A-89A1-629838B529C9", websiteUrl="https://twitter.com/", blob_data=None
+    ):
         try:
             if not blob_data and websitePublicKey != LOGIN_SITE_KEY:
                 self.__get_access_page()
@@ -140,7 +139,9 @@ class BaseCaptchaSolver:
                 self.__post_data_with_js_inst()
                 return fun_captcha_token
             else:
-                fun_captcha_token = self.get_solved_token(websitePublicKey=websitePublicKey, websiteUrl=websiteUrl, blob_data=blob_data)
+                fun_captcha_token = self.get_solved_token(
+                    websitePublicKey=websitePublicKey, websiteUrl=websiteUrl, blob_data=blob_data
+                )
                 return fun_captcha_token
         except Exception as e:
             raise CaptchaSolverFailed(message=str(e))
